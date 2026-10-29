@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/", "destination": "/web_gui/index.html" },
+    { "source": "/favicon.svg", "destination": "/web_gui/favicon.svg" },
+    { "source": "/404", "destination": "/web_gui/404.html" },
+    { "source": "/(.*)", "destination": "/web_gui/$1" }
+  ]
+}

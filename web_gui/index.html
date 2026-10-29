@@ -2,11 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Smart Queue and Waiting-Time Management System - College Project Demonstration">
-  <title>Smart Queue & Waiting-Time Management Dashboard</title>
-  <!-- Inline SVG Favicon -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z'/></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="Smart Queue and Waiting-Time Management System - Second Year Computer Engineering Project with dynamic FIFO Queue and real-time wait estimation.">
+  <meta name="keywords" content="C++, Smart Queue, FIFO, Queue Management, College Project, Data Structures, Linked List">
+  <meta name="author" content="Department of Computer Engineering">
+  <meta property="og:title" content="Smart Queue & Waiting-Time Management System">
+  <meta property="og:description" content="Real-time Queue & Waiting-Time Management System using C++ and dynamic Linked-List queues.">
+  <meta property="og:type" content="website">
+  <title>Smart Queue & Waiting-Time Management Dashboard | College Project</title>
+  
+  <!-- Standalone SVG & Fallback Favicon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="alternate icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z'/></svg>">
   
   <style>
     :root {
@@ -391,9 +398,13 @@
     }
 
     @media (max-width: 640px) {
+      .nav-container { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+      .nav-badges { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
       .actions-panel { flex-direction: column; align-items: stretch; }
-      .btn-group { flex-direction: column; }
-      .btn { width: 100%; justify-content: center; }
+      .btn-group { flex-direction: column; width: 100%; }
+      .btn { width: 100%; justify-content: center; min-height: 42px; }
+      .metric-card { padding: 1rem; }
+      .metric-value { font-size: 1.5rem; }
     }
   </style>
 </head>
@@ -579,14 +590,75 @@
     </div>
   </div>
 
+  <!-- Modal: Project Details -->
+  <div class="modal-overlay" id="projectDetailsModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Project Details</h3>
+        <button onclick="closeModal('projectDetailsModal')" style="border:none;background:none;font-size:1.5rem;cursor:pointer">&times;</button>
+      </div>
+      <p style="color:var(--text-main);font-size:0.95rem;line-height:1.6;margin-bottom:0.75rem;">
+        <strong>Smart Queue and Waiting-Time Management System</strong>
+      </p>
+      <p style="color:var(--text-muted);font-size:0.85rem;line-height:1.6;margin-bottom:0.5rem;">
+        <strong>Course:</strong> Second Year Computer Engineering (SE Computer)<br>
+        <strong>Subject:</strong> Data Structures &amp; Object-Oriented Programming (C++)<br>
+        <strong>Academic Year:</strong> 2026
+      </p>
+      <p style="color:var(--text-muted);font-size:0.85rem;line-height:1.6;">
+        Designed to eliminate chaotic physical queues in banks, hospital clinics, and college offices by issuing unique sequential tokens and computing dynamic waiting times based on queue position and average service duration.
+      </p>
+      <button class="btn btn-secondary" onclick="closeModal('projectDetailsModal')" style="margin-top:1.25rem;width:100%;">Close</button>
+    </div>
+  </div>
+
+  <!-- Modal: Data Structure Info -->
+  <div class="modal-overlay" id="dsInfoModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Data Structure Architecture</h3>
+        <button onclick="closeModal('dsInfoModal')" style="border:none;background:none;font-size:1.5rem;cursor:pointer">&times;</button>
+      </div>
+      <p style="font-size:0.9rem;color:var(--text-main);line-height:1.6;margin-bottom:0.5rem;">
+        <strong>Custom Singly Linked-List Queue (FIFO Discipline):</strong>
+      </p>
+      <ul style="padding-left:1.25rem;font-size:0.85rem;color:var(--text-muted);line-height:1.7;margin-bottom:1rem;">
+        <li><strong>Enqueue (O(1)):</strong> Direct pointer update at <code>rearNode->next</code>.</li>
+        <li><strong>Dequeue (O(1)):</strong> Direct pointer update at <code>frontNode = frontNode->next</code>.</li>
+        <li><strong>Dynamic Allocation:</strong> Creates nodes dynamically via <code>new</code>; zero fixed array size limit.</li>
+        <li><strong>Strict FIFO:</strong> First customer to arrive is guaranteed to be served first.</li>
+      </ul>
+      <button class="btn btn-secondary" onclick="closeModal('dsInfoModal')" style="width:100%;">Close</button>
+    </div>
+  </div>
+
+  <!-- Modal: Storage Info -->
+  <div class="modal-overlay" id="storageInfoModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>File Persistence &amp; Reliability</h3>
+        <button onclick="closeModal('storageInfoModal')" style="border:none;background:none;font-size:1.5rem;cursor:pointer">&times;</button>
+      </div>
+      <p style="font-size:0.9rem;color:var(--text-main);line-height:1.6;margin-bottom:0.5rem;">
+        <strong>Local Persistence Mechanism:</strong>
+      </p>
+      <ul style="padding-left:1.25rem;font-size:0.85rem;color:var(--text-muted);line-height:1.7;margin-bottom:1rem;">
+        <li><strong>data/token_config.txt:</strong> Preserves next token ID (e.g. 105) and average service time across reboots.</li>
+        <li><strong>data/active_queue.txt:</strong> Restores unserved tokens so system restarts never lose customers.</li>
+        <li><strong>data/completed_records.csv:</strong> Logs finished visits (openable in Microsoft Excel / Google Sheets).</li>
+      </ul>
+      <button class="btn btn-secondary" onclick="closeModal('storageInfoModal')" style="width:100%;">Close</button>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer>
     <div class="footer-links">
-      <a href="javascript:alert('Smart Queue System developed for Second Year Computer Engineering Project')">Project Details</a>
-      <a href="javascript:alert('Data structures used: Custom Linked List Queue (FIFO) with O(1) Enqueue & Dequeue')">Data Structure Info</a>
-      <a href="javascript:alert('File storage: token_config.txt, active_queue.txt, completed_records.csv')">Storage Mechanism</a>
+      <a href="javascript:void(0)" onclick="openModal('projectDetailsModal')">Project Details</a>
+      <a href="javascript:void(0)" onclick="openModal('dsInfoModal')">Data Structure Info</a>
+      <a href="javascript:void(0)" onclick="openModal('storageInfoModal')">Storage Mechanism</a>
     </div>
-    <p>&copy; 2026 Department of Computer Engineering &bull; Smart Queue Management System</p>
+    <p>&copy; <span id="currentYear">2026</span> Department of Computer Engineering &bull; Smart Queue Management System</p>
   </footer>
 
   <!-- Application Logic JavaScript -->
@@ -841,6 +913,9 @@
     }
 
     // Initialize UI on load and attempt sync
+    try {
+      document.getElementById("currentYear").innerText = new Date().getFullYear();
+    } catch(e) {}
     syncFromBackend();
   </script>
 </body>
