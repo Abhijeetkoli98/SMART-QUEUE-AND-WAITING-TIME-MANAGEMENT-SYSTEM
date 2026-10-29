@@ -2,7 +2,9 @@
 
 > **College Project:** Second-Year Computer Engineering (SE Computer)  
 > **Topic:** Data Structures & Object-Oriented Programming (OOP) in C++  
-> **Developed With:** Standard C++11, MinGW GCC, HTML5/CSS3/JS Offline GUI Dashboard  
+> **Developed With:** Standard C++11, MinGW GCC, HTML5/CSS3/JS Web GUI Dashboard  
+> **Live Web Demo:** [https://smart-queue-and-waiting-time-manage.vercel.app/web_gui/index.html](https://smart-queue-and-waiting-time-manage.vercel.app/web_gui/index.html)  
+> **GitHub Repository:** [https://github.com/Abhijeetkoli98/SMART-QUEUE-AND-WAITING-TIME-MANAGEMENT-SYSTEM](https://github.com/Abhijeetkoli98/SMART-QUEUE-AND-WAITING-TIME-MANAGEMENT-SYSTEM)  
 
 ---
 
