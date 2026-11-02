@@ -7,10 +7,10 @@ if not exist smart_queue.exe (
     call build.bat
 )
 
-echo Starting C++ Native HTTP REST API Server on port 8080...
-start "" "smart_queue.exe" 8080
+echo Starting C++ Native HTTP REST API Server on port 3000...
+start "" "smart_queue.exe" 3000 --daemon
 
 timeout /t 2 >nul
 
-echo Opening Smart Queue Dashboard in default browser...
-start http://localhost:8080/web_gui/index.html
+echo Opening Smart Queue Dashboard at http://localhost:3000/web_gui/index.html ...
+start http://localhost:3000/web_gui/index.html

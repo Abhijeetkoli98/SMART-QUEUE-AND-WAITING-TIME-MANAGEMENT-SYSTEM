@@ -706,13 +706,32 @@
     let systemState = null;
     let activeTab = 'dashboard';
     let pollInterval = null;
+    let API_BASE = '';
+    let isConnectedToCpp = false;
 
-    // Detect C++ Backend API URL
-    // If served from C++ server (http://localhost:8080 or port 3000), use relative origin
-    // If opened directly from file:// or hosted on Vercel, attempt http://localhost:8080
-    const API_BASE = (window.location.protocol === 'http:' || window.location.protocol === 'https:') 
-                     ? '' 
-                     : 'http://localhost:8080';
+    // Intelligent C++ Backend Connection Detection:
+    // Probes:
+    // 1. Current Origin ('')
+    // 2. http://localhost:3000
+    // 3. http://localhost:8080
+    async function resolveApiBase() {
+      const candidates = ['', 'http://localhost:3000', 'http://localhost:8080'];
+      for (let base of candidates) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 800);
+          const res = await fetch(`${base}/api/status`, { signal: controller.signal });
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            API_BASE = base;
+            isConnectedToCpp = true;
+            return true;
+          }
+        } catch(e) {}
+      }
+      isConnectedToCpp = false;
+      return false;
+    }
 
     function showAlert(msg, type = 'info') {
       const banner = document.getElementById('alertBanner');
@@ -760,6 +779,10 @@
 
     async function apiRequest(endpoint, method = 'GET', body = null) {
       try {
+        if (!isConnectedToCpp) {
+          await resolveApiBase();
+        }
+
         const options = {
           method: method,
           headers: { 'Content-Type': 'application/json' }
@@ -776,19 +799,56 @@
     }
 
     async function fetchSystemStatus(showNotification = false) {
-      const data = await apiRequest('/api/status');
+      const found = await resolveApiBase();
       const badge = document.getElementById('backendBadge');
-      
-      if (data) {
-        systemState = data;
-        badge.className = 'status-pill pill-green';
-        badge.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#16a34a"></span> C++ Core Active';
-        renderAll();
-        if (showNotification) showAlert('System refreshed from C++ engine!', 'success');
-      } else {
-        badge.className = 'status-pill pill-red';
-        badge.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#dc2626"></span> C++ Core Offline';
-        if (showNotification) showAlert('Could not reach C++ backend on port 8080.', 'danger');
+
+      if (found) {
+        const data = await apiRequest('/api/status');
+        if (data) {
+          systemState = data;
+          const portLabel = API_BASE ? API_BASE.replace('http://localhost:', 'Port ') : 'Port 3000';
+          badge.className = 'status-pill pill-green';
+          badge.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#16a34a"></span> C++ Core Active (${portLabel})`;
+          renderAll();
+          if (showNotification) showAlert(`Connected to live C++ backend (${portLabel})!`, 'success');
+          return;
+        }
+      }
+
+      // If backend is not running on localhost, fallback to initial realistic demo state
+      badge.className = 'status-pill pill-blue';
+      badge.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2563eb"></span> Standalone Preview';
+      if (!systemState) {
+        systemState = {
+          totalWaiting: 3,
+          availableCounters: 2,
+          totalCounters: 4,
+          gracePeriodMinutes: 5,
+          autoWorkloadBalancing: true,
+          overallAvgWaitMinutes: 5.5,
+          services: [
+            { id: 'ADM', name: 'Admission & Registration', description: 'Document verification, branch change', color: '#2563eb', currentAvgDurationMinutes: 8.0 },
+            { id: 'FEE', name: 'Fees & Accounts', description: 'Tuition deposit, scholarship receipt', color: '#059669', currentAvgDurationMinutes: 4.0 },
+            { id: 'EXM', name: 'Examination & Results', description: 'Hall tickets, revaluation queries', color: '#d97706', currentAvgDurationMinutes: 6.0 },
+            { id: 'CRT', name: 'Transcripts & Certificates', description: 'Leaving certificates, bona fide', color: '#7c3aed', currentAvgDurationMinutes: 5.0 }
+          ],
+          counters: [
+            { id: 1, name: 'Counter 1 - Admission & Certs', operatorName: 'Prof. R. Sharma', status: 'SERVING', hasActiveToken: true, projectedWorkloadMinutes: 8.0, elapsedMinutes: 2.1, isGraceExpired: false, totalServedCount: 12, totalNoShowCount: 1, totalCancelledCount: 0, supportedServices: ['ADM', 'CRT'], currentToken: { id: 101, formattedId: 'ADM-101', studentName: 'Aarav Sharma', studentId: 'SE-2026-012', serviceName: 'Admission & Registration' } },
+            { id: 2, name: 'Counter 2 - Cashier & Fees', operatorName: 'Mrs. S. Deshmukh', status: 'AVAILABLE', hasActiveToken: false, projectedWorkloadMinutes: 4.0, elapsedMinutes: 0.0, isGraceExpired: false, totalServedCount: 18, totalNoShowCount: 0, totalCancelledCount: 1, supportedServices: ['FEE'], currentToken: null },
+            { id: 3, name: 'Counter 3 - Examination Wing', operatorName: 'Mr. A. Patil', status: 'SERVING', hasActiveToken: true, projectedWorkloadMinutes: 6.0, elapsedMinutes: 4.5, isGraceExpired: false, totalServedCount: 9, totalNoShowCount: 0, totalCancelledCount: 0, supportedServices: ['EXM', 'CRT'], currentToken: { id: 102, formattedId: 'EXM-102', studentName: 'Rahul Verma', studentId: 'BE-2024-045', serviceName: 'Examination & Results' } },
+            { id: 4, name: 'Counter 4 - Multi-Service Express', operatorName: 'Mr. V. Khan', status: 'AVAILABLE', hasActiveToken: false, projectedWorkloadMinutes: 5.0, elapsedMinutes: 0.0, isGraceExpired: false, totalServedCount: 22, totalNoShowCount: 2, totalCancelledCount: 0, supportedServices: ['ADM', 'FEE', 'EXM', 'CRT'], currentToken: null }
+          ],
+          queues: {
+            'ADM': [{ id: 103, formattedId: 'ADM-103', studentName: 'Priya Patel', studentId: 'TE-2025-088', arrivalTimeString: '10:30 AM', priority: 0 }],
+            'FEE': [{ id: 104, formattedId: 'FEE-104', studentName: 'Sneha Kulkarni', studentId: 'SE-2026-031', arrivalTimeString: '10:32 AM', priority: 0 }],
+            'EXM': [{ id: 105, formattedId: 'EXM-105', studentName: 'Kunal Bansal', studentId: 'FE-2027-104', arrivalTimeString: '10:35 AM', priority: 1 }],
+            'CRT': []
+          }
+        };
+      }
+      renderAll();
+      if (showNotification) {
+        showAlert('C++ backend not running locally on port 3000. Start run.bat to activate native C++ engine.', 'info');
       }
     }
 

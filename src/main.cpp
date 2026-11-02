@@ -27,6 +27,13 @@ int getIntInput(const std::string& prompt) {
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             return value;
         } else {
+            if (std::cin.eof()) {
+                // Running in background / non-interactive daemon mode:
+                // Keep the HTTP server running continuously
+                while (true) {
+                    Sleep(2000);
+                }
+            }
             std::cout << "  [ERROR] Invalid input! Please enter a valid number.\n";
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -53,10 +60,17 @@ void printBanner(int port) {
 }
 
 int main(int argc, char* argv[]) {
-    int port = 8080;
-    if (argc >= 2) {
-        port = std::atoi(argv[1]);
-        if (port <= 1024) port = 8080;
+    int port = 3000;
+    bool daemonMode = false;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--daemon" || arg == "-d") {
+            daemonMode = true;
+        } else {
+            int p = std::atoi(argv[i]);
+            if (p > 1024) port = p;
+        }
     }
 
     QueueEngine engine("data");
@@ -64,6 +78,14 @@ int main(int argc, char* argv[]) {
 
     if (!server.start()) {
         std::cerr << "  [WARNING] Could not start HTTP server on port " << port << ". Falling back to console only.\n";
+    }
+
+    if (daemonMode) {
+        std::cout << "[C++ Native Server] Running in persistent background mode on port " << port << "...\n";
+        while (true) {
+            Sleep(2000);
+        }
+        return 0;
     }
 
     int choice = -1;
