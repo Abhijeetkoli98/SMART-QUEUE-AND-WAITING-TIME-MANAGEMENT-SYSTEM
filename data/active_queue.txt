@@ -1,4 +1,2 @@
-WAITING|107|ADM|Admission & Registration|Student||0|1793642946
-WAITING|108|ADM|Admission & Registration|Aarav Sharma|SE-2026-001|0|1793642946
-WAITING|111|ADM|Admission & Registration|Aarav Sharma|SE-2026-001|0|1793642951
-WAITING|110|EXM|Examination & Results|Rahul Verma|BE-2024-099|1|1793642946
+WAITING|119|EXM|Examination & Results|Rohan Joshi|BE-2024-012|1|1793645909
+WAITING|118|FEE|Fees & Accounts|Priya Patel|TE-2025-045|0|1793645909

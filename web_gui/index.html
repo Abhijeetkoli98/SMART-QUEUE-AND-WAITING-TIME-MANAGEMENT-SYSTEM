@@ -99,8 +99,9 @@
     .pill-green { background: var(--success-subtle); color: var(--success); border: 1px solid #bbf7d0; }
     .pill-red { background: var(--danger-subtle); color: var(--danger); border: 1px solid #fecaca; }
     .pill-blue { background: var(--primary-subtle); color: var(--primary); border: 1px solid #bfdbfe; }
+    .pill-amber { background: var(--warning-subtle); color: var(--warning); border: 1px solid #fed7aa; }
 
-    /* Navigation Bar */
+    /* Navigation Bar (Strictly 6 Sections) */
     nav {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
@@ -117,7 +118,7 @@
     .nav-btn {
       background: none;
       border: none;
-      padding: 0.85rem 1rem;
+      padding: 0.85rem 1.1rem;
       font-size: 0.9rem;
       font-weight: 600;
       color: var(--text-muted);
@@ -152,13 +153,14 @@
     .alert-success { background: var(--success-subtle); color: var(--success); border: 1px solid #bbf7d0; }
     .alert-danger { background: var(--danger-subtle); color: var(--danger); border: 1px solid #fecaca; }
     .alert-info { background: var(--primary-subtle); color: var(--primary); border: 1px solid #bfdbfe; }
+    .alert-warning { background: var(--warning-subtle); color: var(--warning); border: 1px solid #fed7aa; }
 
     /* Metrics Grid */
     .metrics-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.75rem;
     }
     .metric-card {
       background: var(--surface);
@@ -168,12 +170,12 @@
       box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: 0.35rem;
       position: relative;
     }
-    .metric-label { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
-    .metric-value { font-size: 2rem; font-weight: 800; color: var(--text); }
-    .metric-desc { font-size: 0.85rem; color: var(--text-muted); }
+    .metric-label { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .metric-value { font-size: 1.85rem; font-weight: 800; color: var(--text); }
+    .metric-desc { font-size: 0.8rem; color: var(--text-muted); }
 
     /* Section Panels */
     .panel {
@@ -246,6 +248,7 @@
       border: 1px solid transparent;
       cursor: pointer;
       transition: all 0.2s;
+      text-decoration: none;
     }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-primary:hover { background: var(--primary-hover); }
@@ -331,15 +334,75 @@
     .modal-title { font-size: 1.15rem; font-weight: 700; }
     .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
 
+    /* QR Code Card */
+    .qr-card-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .qr-svg-holder {
+      width: 180px;
+      height: 180px;
+      background: #ffffff;
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .qr-svg-holder svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Sub-tabs pills */
+    .subnav-pills {
+      display: flex;
+      gap: 0.5rem;
+      background: var(--surface-subtle);
+      padding: 0.35rem;
+      border-radius: var(--radius);
+      width: fit-content;
+      margin-bottom: 1.5rem;
+    }
+    .subnav-pill {
+      border: none;
+      background: none;
+      padding: 0.45rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .subnav-pill.active {
+      background: var(--surface);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
     /* Tabs */
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
     /* Responsive */
-    @media (max-width: 640px) {
+    @media (max-width: 768px) {
       .header-inner { flex-direction: column; align-items: flex-start; }
-      .metrics-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
       .counters-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .metrics-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -354,7 +417,7 @@
         </div>
         <div>
           <div class="brand-title">Smart Queue System</div>
-          <div class="brand-subtitle">Department of Computer Engineering &bull; C++ Core Backend</div>
+          <div class="brand-subtitle">Department of Computer Engineering &bull; C++ Core Engine</div>
         </div>
       </a>
       <div class="header-badges">
@@ -367,17 +430,15 @@
     </div>
   </header>
 
-  <!-- Navigation -->
+  <!-- Navigation (Strictly 6 Designated Sections) -->
   <nav>
     <div class="nav-inner">
-      <button class="nav-btn active" onclick="switchTab('dashboard')">Dashboard</button>
-      <button class="nav-btn" onclick="switchTab('studentKiosk')">Student Kiosk</button>
-      <button class="nav-btn" onclick="switchTab('counters')">Operator Counters</button>
-      <button class="nav-btn" onclick="switchTab('monitor')">Public Display Monitor</button>
-      <button class="nav-btn" onclick="switchTab('queues')">Service Queues</button>
-      <button class="nav-btn" onclick="switchTab('history')">Token History</button>
-      <button class="nav-btn" onclick="switchTab('reports')">Analytics & Reports</button>
-      <button class="nav-btn" onclick="switchTab('settings')">Settings</button>
+      <button class="nav-btn active" onclick="switchTab('dashboard')">1. Dashboard</button>
+      <button class="nav-btn" onclick="switchTab('studentKiosk')">2. Student Kiosk</button>
+      <button class="nav-btn" onclick="switchTab('counters')">3. Operator Panel</button>
+      <button class="nav-btn" onclick="switchTab('monitor')">4. Public Display Monitor</button>
+      <button class="nav-btn" onclick="switchTab('queueHistory')">5. Queue &amp; History</button>
+      <button class="nav-btn" onclick="switchTab('settingsReports')">6. Settings &amp; Reports</button>
     </div>
   </nav>
 
@@ -386,61 +447,93 @@
     <!-- Notification Alert -->
     <div id="alertBanner" class="alert-banner alert-info">
       <span id="alertMsg">System ready.</span>
-      <button onclick="dismissAlert()" style="background:none;border:none;cursor:pointer;font-weight:bold">&times;</button>
+      <button onclick="dismissAlert()" style="background:none;border:none;cursor:pointer;font-weight:bold;font-size:1.1rem">&times;</button>
     </div>
 
     <!-- ================================================================= -->
-    <!-- TAB 1: DASHBOARD -->
+    <!-- SECTION 1: DASHBOARD – ADMIN OVERVIEW -->
     <!-- ================================================================= -->
     <div id="tab-dashboard" class="tab-content active">
+      <!-- Top Metrics Overview -->
       <div class="metrics-grid">
         <div class="metric-card">
           <span class="metric-label">Total Waiting</span>
           <div class="metric-value" id="kpiTotalWaiting">0</div>
-          <span class="metric-desc">Across all 4 service queues</span>
+          <span class="metric-desc">Across all college service queues</span>
         </div>
         <div class="metric-card">
           <span class="metric-label">Available Counters</span>
           <div class="metric-value" id="kpiAvailableCounters">0 / 4</div>
-          <span class="metric-desc">Ready to serve next student</span>
+          <span class="metric-desc">Idle and ready to accept next student</span>
         </div>
         <div class="metric-card">
-          <span class="metric-label">Overall Avg Wait</span>
-          <div class="metric-value" id="kpiAvgWait">~0 <span style="font-size:1.1rem;font-weight:600">min</span></div>
-          <span class="metric-desc">Dynamic historical average</span>
+          <span class="metric-label">Busy Counters</span>
+          <div class="metric-value" id="kpiBusyCounters" style="color:var(--primary)">0</div>
+          <span class="metric-desc">Actively serving students</span>
         </div>
         <div class="metric-card">
-          <span class="metric-label">Grace Period</span>
-          <div class="metric-value" id="kpiGrace">5 <span style="font-size:1.1rem;font-weight:600">min</span></div>
-          <span class="metric-desc">Allowed before No-Show action</span>
+          <span class="metric-label">Paused / Offline</span>
+          <div class="metric-value" id="kpiPausedCounters" style="color:var(--warning)">0</div>
+          <span class="metric-desc">Operator temporarily paused</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Avg Service Duration</span>
+          <div class="metric-value" id="kpiAvgService">~0 <span style="font-size:1rem;font-weight:600">min</span></div>
+          <span class="metric-desc">Dynamic historical EMA from C++</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Estimated Waiting Time</span>
+          <div class="metric-value" id="kpiEstimatedWait" style="color:var(--success)">0 <span style="font-size:1rem;font-weight:600">min</span></div>
+          <span class="metric-desc">Current wait for new arrivals</span>
         </div>
       </div>
 
-      <!-- Live Counters Overview -->
-      <div class="panel">
-        <div class="panel-header">
-          <div>
-            <h2 class="panel-title">Active Service Counters</h2>
-            <div class="panel-subtitle">Real-time status, currently serving tokens, and workload balancing</div>
+      <!-- Quick Action Bar & Mobile Kiosk QR Card -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem;margin-bottom:2rem">
+        <!-- Live Counters Overview Summary -->
+        <div class="panel" style="margin-bottom:0">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Active Service Counters</h2>
+              <div class="panel-subtitle">Real-time status, currently serving tokens, and workload balancing</div>
+            </div>
+            <div style="display:flex;gap:0.5rem">
+              <button class="btn btn-outline btn-sm" onclick="loadCollegeDemo()">Load Demo Data</button>
+              <button class="btn btn-outline btn-sm" onclick="resetAllQueues()">Reset Queues</button>
+            </div>
           </div>
-          <div style="display:flex;gap:0.5rem">
-            <button class="btn btn-outline btn-sm" onclick="loadCollegeDemo()">Load Demo Data</button>
-            <button class="btn btn-outline btn-sm" onclick="resetAllQueues()">Reset Queues</button>
+          <div class="panel-body">
+            <div class="counters-grid" id="dashboardCountersGrid">
+              <!-- Dynamically populated from C++ -->
+            </div>
           </div>
         </div>
-        <div class="panel-body">
-          <div class="counters-grid" id="dashboardCountersGrid">
-            <!-- Dynamically populated from C++ -->
+
+        <!-- C++ Native QR Code Quick Card -->
+        <div class="qr-card-container">
+          <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:0.25rem">Mobile Student Kiosk</h3>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem">
+            Scan with any smartphone on campus Wi-Fi to generate a token directly.
+          </p>
+          <div class="qr-svg-holder" id="dashboardQrHolder">
+            <span style="font-size:0.8rem;color:var(--text-muted)">Loading C++ QR...</span>
+          </div>
+          <div style="font-size:0.75rem;color:var(--text-muted);word-break:break-all;margin-bottom:0.75rem" id="dashboardQrUrlText">
+            http://172.17.134.16:3000/web_gui/index.html?tab=studentKiosk
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center">
+            <a href="/api/qrcode.svg" download="student_kiosk_qr.svg" class="btn btn-outline btn-sm">Download QR (SVG)</a>
+            <button class="btn btn-primary btn-sm" onclick="switchTab('studentKiosk')">Open Kiosk</button>
           </div>
         </div>
       </div>
 
-      <!-- Service Queues Summary -->
+      <!-- Live Service Queues Summary Table -->
       <div class="panel">
         <div class="panel-header">
           <div>
-            <h2 class="panel-title">Live College Service Queues (FIFO Discipline)</h2>
-            <div class="panel-subtitle">Admission, Fees, Examination, and Certificates</div>
+            <h2 class="panel-title">Live College Service Queues (FIFO Order)</h2>
+            <div class="panel-subtitle">Admission, Fees, Examination, Certificates, and General Enquiry</div>
           </div>
         </div>
         <div class="table-responsive">
@@ -448,7 +541,7 @@
             <thead>
               <tr>
                 <th>Service Name</th>
-                <th>Service Code</th>
+                <th>Code</th>
                 <th>Waiting Students</th>
                 <th>Avg Duration</th>
                 <th>Status</th>
@@ -463,25 +556,28 @@
     </div>
 
     <!-- ================================================================= -->
-    <!-- TAB 2: STUDENT KIOSK -->
+    <!-- SECTION 2: STUDENT KIOSK – TOKEN GENERATION -->
     <!-- ================================================================= -->
     <div id="tab-studentKiosk" class="tab-content">
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem">
         <!-- Generate Token Form -->
         <div class="panel">
           <div class="panel-header">
-            <h2 class="panel-title">Get a Service Token</h2>
-            <div class="panel-subtitle">Select your service and enter details to join the queue</div>
+            <div>
+              <h2 class="panel-title">Get a Service Token</h2>
+              <div class="panel-subtitle">Select service and enter details to join the queue</div>
+            </div>
           </div>
           <div class="panel-body">
-            <form onsubmit="handleGenerateToken(event)">
+            <form id="tokenGenForm" onsubmit="handleGenerateToken(event)">
               <div class="form-group">
-                <label>Select Service</label>
+                <label>Select Required Service</label>
                 <select id="kioskService" class="form-control" required>
-                  <option value="ADM">Admission & Registration (~8 mins)</option>
-                  <option value="FEE">Fees & Accounts (~4 mins)</option>
-                  <option value="EXM">Examination & Results (~6 mins)</option>
-                  <option value="CRT">Transcripts & Certificates (~5 mins)</option>
+                  <option value="ADM">Admission &amp; Registration (~8 mins)</option>
+                  <option value="FEE">Fees &amp; Accounts (~4 mins)</option>
+                  <option value="EXM">Examination &amp; Results (~6 mins)</option>
+                  <option value="CRT">Transcripts &amp; Certificates (~5 mins)</option>
+                  <option value="GEN">General Enquiry (~3 mins)</option>
                 </select>
               </div>
               <div class="form-group">
@@ -498,43 +594,83 @@
                   <strong>Priority Category</strong> (Specially-abled, Senior Citizen, Faculty Authorization)
                 </label>
               </div>
-              <button type="submit" class="btn btn-primary" style="width:100%;padding:0.75rem">Generate Token (C++ Engine)</button>
+              <button type="submit" id="btnGenToken" class="btn btn-primary" style="width:100%;padding:0.75rem">
+                Generate Token (C++ Engine)
+              </button>
             </form>
+
+            <!-- Prominent Generated Token Card -->
+            <div id="kioskGeneratedCard" style="display:none;margin-top:1.5rem;padding:1.5rem;border-radius:var(--radius);border:2px solid #3b82f6;background:#eff6ff;text-align:center">
+              <span style="font-size:0.8rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.05em">TOKEN GENERATED SUCCESSFULLY</span>
+              <div style="font-size:2.5rem;font-weight:900;color:var(--primary);margin:0.5rem 0" id="genTokenNumber">---</div>
+              <div style="font-size:1rem;font-weight:700;color:var(--text)" id="genStudentName">---</div>
+              <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem" id="genServiceName">---</div>
+              <div style="display:flex;justify-content:space-around;background:#ffffff;padding:0.75rem;border-radius:var(--radius-sm);border:1px solid #bfdbfe">
+                <div>
+                  <div style="font-size:0.75rem;color:var(--text-muted)">Queue Position</div>
+                  <div style="font-size:1.15rem;font-weight:800;color:var(--text)" id="genQueuePosition">#1</div>
+                </div>
+                <div>
+                  <div style="font-size:0.75rem;color:var(--text-muted)">Est. Waiting Time</div>
+                  <div style="font-size:1.15rem;font-weight:800;color:var(--success)" id="genWaitTime">~0 min</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Check Status / Search Token -->
-        <div class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">Check Token Status & Wait Time</h2>
-            <div class="panel-subtitle">Real-time dynamic waiting-time calculation from C++ engine</div>
-          </div>
-          <div class="panel-body">
-            <form onsubmit="handleSearchToken(event)">
-              <div class="form-group">
-                <label>Enter Numeric Token ID (e.g. 101, 102)</label>
-                <input type="number" id="searchTokenId" class="form-control" placeholder="101" required>
+        <!-- Check Status / Search Token & Mobile QR Display -->
+        <div>
+          <!-- Check Status Card -->
+          <div class="panel" style="margin-bottom:1.5rem">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Check Token Status &amp; Wait Time</h2>
+                <div class="panel-subtitle">Real-time dynamic waiting-time calculation from C++ engine</div>
               </div>
-              <button type="submit" class="btn btn-outline" style="width:100%;padding:0.75rem">Search Token</button>
-            </form>
-
-            <div id="searchResultCard" style="display:none;margin-top:1.5rem;padding:1.25rem;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-subtle)">
-              <!-- Search details populated dynamically -->
             </div>
+            <div class="panel-body">
+              <form onsubmit="handleSearchToken(event)">
+                <div class="form-group">
+                  <label>Enter Numeric Token ID (e.g. 101, 102)</label>
+                  <input type="number" id="searchTokenId" class="form-control" placeholder="101" required>
+                </div>
+                <button type="submit" class="btn btn-outline" style="width:100%;padding:0.75rem">Search Token</button>
+              </form>
+
+              <div id="searchResultCard" style="display:none;margin-top:1.25rem;padding:1.25rem;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-subtle)">
+                <!-- Search details populated dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Kiosk Direct QR Card -->
+          <div class="qr-card-container">
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:0.25rem">Direct Kiosk Access on Phone</h3>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem">
+              Show this QR code at college entrance or reception desk.
+            </p>
+            <div class="qr-svg-holder" id="kioskQrHolder">
+              <span style="font-size:0.8rem;color:var(--text-muted)">Loading C++ QR...</span>
+            </div>
+            <a href="/api/qrcode.svg" download="student_kiosk_qr.svg" class="btn btn-outline btn-sm">Download SVG for Print</a>
           </div>
         </div>
       </div>
     </div>
 
     <!-- ================================================================= -->
-    <!-- TAB 3: OPERATOR COUNTER MANAGEMENT -->
+    <!-- SECTION 3: OPERATOR PANEL – COUNTER MANAGEMENT -->
     <!-- ================================================================= -->
     <div id="tab-counters" class="tab-content">
       <div class="panel">
         <div class="panel-header">
           <div>
             <h2 class="panel-title">Counter Operator Control Station</h2>
-            <div class="panel-subtitle">Intelligent workload dispatching, service completion, cancellation & no-show management</div>
+            <div class="panel-subtitle">Workload balancing, service completion, cancellation &amp; no-show management</div>
+          </div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">
+            Auto Workload Balancing: <span class="tag tag-completed">ACTIVE (C++)</span>
           </div>
         </div>
         <div class="panel-body">
@@ -546,19 +682,22 @@
     </div>
 
     <!-- ================================================================= -->
-    <!-- TAB 4: PUBLIC DISPLAY MONITOR -->
+    <!-- SECTION 4: PUBLIC DISPLAY MONITOR – STUDENT INFORMATION SCREEN -->
     <!-- ================================================================= -->
     <div id="tab-monitor" class="tab-content">
       <div class="panel" style="background:#0f172a;color:#ffffff;border:none">
         <div class="panel-header" style="border-bottom:1px solid #334155">
           <div>
-            <h2 class="panel-title" style="color:#ffffff;font-size:1.5rem">CAMPUS SERVICE QUEUE MONITOR</h2>
-            <div class="panel-subtitle" style="color:#94a3b8">Audible Token Announcements &amp; Active Counter Display</div>
+            <h2 class="panel-title" style="color:#ffffff;font-size:1.4rem;letter-spacing:0.03em">CAMPUS WAITING HALL DISPLAY MONITOR</h2>
+            <div class="panel-subtitle" style="color:#94a3b8">Audible Token Announcements &bull; Real-time Counter Service Status</div>
           </div>
-          <button class="btn btn-primary" onclick="testAudioCall()">Test Chime</button>
+          <div style="display:flex;gap:0.75rem;align-items:center">
+            <span id="liveClock" style="font-size:1.1rem;font-weight:700;color:#38bdf8;font-family:monospace">--:--:--</span>
+            <button class="btn btn-primary btn-sm" onclick="testAudioCall()">Test Chime</button>
+          </div>
         </div>
         <div class="panel-body">
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem" id="publicMonitorGrid">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1.5rem" id="publicMonitorGrid">
             <!-- Dynamically populated -->
           </div>
         </div>
@@ -566,108 +705,164 @@
     </div>
 
     <!-- ================================================================= -->
-    <!-- TAB 5: SERVICE QUEUES -->
+    <!-- SECTION 5: QUEUE & HISTORY (COMBINED) -->
     <!-- ================================================================= -->
-    <div id="tab-queues" class="tab-content">
-      <div class="panel">
-        <div class="panel-header">
-          <h2 class="panel-title">Detailed Waiting Queues (FIFO Order per Service)</h2>
-          <div class="panel-subtitle">Linked list ordering maintained in C++ core</div>
+    <div id="tab-queueHistory" class="tab-content">
+      <!-- Subnav View Switcher -->
+      <div class="subnav-pills">
+        <button class="subnav-pill active" id="btnSubQueues" onclick="switchQueueHistoryView('queues')">Live FIFO Queues</button>
+        <button class="subnav-pill" id="btnSubHistory" onclick="switchQueueHistoryView('history')">Token History &amp; Audit Log</button>
+      </div>
+
+      <!-- VIEW A: LIVE FIFO QUEUES -->
+      <div id="viewLiveQueues">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Detailed Waiting Queues (FIFO Discipline per Service)</h2>
+              <div class="panel-subtitle">Singly Linked List queue ordering maintained in native C++</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div id="allQueuesContainer">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
         </div>
-        <div class="panel-body">
-          <div id="allQueuesContainer">
-            <!-- Dynamically populated -->
+      </div>
+
+      <!-- VIEW B: TOKEN HISTORY & AUDIT LOG -->
+      <div id="viewTokenHistory" style="display:none">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Complete Token History &amp; Audit Log</h2>
+              <div class="panel-subtitle">Permanent records of Completed, Cancelled, and No-Show tokens stored in C++</div>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <input type="text" id="historySearchInput" class="form-control" style="width:200px;padding:0.4rem 0.65rem;font-size:0.85rem" placeholder="Filter by name / ID..." oninput="filterHistoryTable()">
+              <select id="historyStatusFilter" class="form-control" style="width:140px;padding:0.4rem 0.65rem;font-size:0.85rem" onchange="filterHistoryTable()">
+                <option value="ALL">All Statuses</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+                <option value="NOSHOW">No-Show</option>
+              </select>
+              <button class="btn btn-outline btn-sm" onclick="fetchHistory()">Refresh</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Token</th>
+                  <th>Student</th>
+                  <th>Service</th>
+                  <th>Status</th>
+                  <th>Counter</th>
+                  <th>Arrival</th>
+                  <th>Finished</th>
+                  <th>Wait Time</th>
+                  <th>Service Duration</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody id="historyTbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
 
     <!-- ================================================================= -->
-    <!-- TAB 6: TOKEN HISTORY & AUDIT LOG -->
+    <!-- SECTION 6: SETTINGS & REPORTS (COMBINED) -->
     <!-- ================================================================= -->
-    <div id="tab-history" class="tab-content">
+    <div id="tab-settingsReports" class="tab-content">
+      <!-- Performance Analytics KPIs -->
       <div class="panel">
         <div class="panel-header">
           <div>
-            <h2 class="panel-title">Complete Token History & Audit Log</h2>
-            <div class="panel-subtitle">Records of Completed, Cancelled, and No-Show tokens stored in C++</div>
+            <h2 class="panel-title">System Performance &amp; Workload Analytics</h2>
+            <div class="panel-subtitle">Aggregated by C++ Queue Engine from actual service operations</div>
           </div>
-          <button class="btn btn-outline btn-sm" onclick="fetchHistory()">Refresh History</button>
-        </div>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>Token</th>
-                <th>Student</th>
-                <th>Service</th>
-                <th>Status</th>
-                <th>Counter</th>
-                <th>Arrival</th>
-                <th>Finished</th>
-                <th>Wait Mins</th>
-                <th>Service Mins</th>
-                <th>Notes</th>
-              </tr>
-            </thead>
-            <tbody id="historyTbody">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ================================================================= -->
-    <!-- TAB 7: REPORTS & ANALYTICS -->
-    <!-- ================================================================= -->
-    <div id="tab-reports" class="tab-content">
-      <div class="panel">
-        <div class="panel-header">
-          <h2 class="panel-title">Performance & Workload Analytics</h2>
-          <div class="panel-subtitle">Calculated by C++ Queue Engine</div>
+          <a href="/completed_records.csv" download="completed_records.csv" class="btn btn-outline btn-sm">
+            Export History (CSV)
+          </a>
         </div>
         <div class="panel-body">
-          <div class="metrics-grid">
+          <div class="metrics-grid" style="margin-bottom:0">
             <div class="metric-card">
               <span class="metric-label">Completed Services</span>
               <div class="metric-value" id="reportCompleted" style="color:var(--success)">0</div>
+              <span class="metric-desc">Tokens successfully processed</span>
             </div>
             <div class="metric-card">
               <span class="metric-label">Cancelled Tokens</span>
               <div class="metric-value" id="reportCancelled" style="color:var(--danger)">0</div>
+              <span class="metric-desc">Student or operator cancellations</span>
             </div>
             <div class="metric-card">
               <span class="metric-label">No-Show Incidents</span>
               <div class="metric-value" id="reportNoShow" style="color:var(--warning)">0</div>
+              <span class="metric-desc">Student failed to arrive after call</span>
             </div>
             <div class="metric-card">
               <span class="metric-label">Total Processed</span>
               <div class="metric-value" id="reportTotalProcessed">0</div>
+              <span class="metric-desc">Lifetime tokens finished</span>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- ================================================================= -->
-    <!-- TAB 8: SETTINGS -->
-    <!-- ================================================================= -->
-    <div id="tab-settings" class="tab-content">
+      <!-- System Configuration & Parameters -->
       <div class="panel">
         <div class="panel-header">
-          <h2 class="panel-title">System Settings &amp; Configuration</h2>
-          <div class="panel-subtitle">Configure C++ engine parameters</div>
+          <div>
+            <h2 class="panel-title">System Parameters &amp; Configuration</h2>
+            <div class="panel-subtitle">Configure C++ engine behavior and QR code distribution target</div>
+          </div>
         </div>
-        <div class="panel-body" style="max-width:600px">
-          <form onsubmit="handleSaveSettings(event)">
-            <div class="form-group">
-              <label>No-Show Grace Period (Minutes)</label>
-              <input type="number" id="settingGracePeriod" class="form-control" min="1" max="30" value="5" required>
-              <small style="color:var(--text-muted)">Time a student has to arrive at the counter after being called before operator can mark No-Show.</small>
+        <div class="panel-body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem">
+            <!-- Settings Form -->
+            <form onsubmit="handleSaveSettings(event)">
+              <div class="form-group">
+                <label>Default No-Show Grace Period (Minutes)</label>
+                <input type="number" id="settingGracePeriod" class="form-control" min="1" max="30" value="5" required>
+                <small style="color:var(--text-muted)">
+                  Grace period allowed before operator can officially mark an unrepresented student as No-Show.
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label>Mobile Kiosk Target URL for C++ QR Code Generation</label>
+                <input type="url" id="settingQrUrl" class="form-control" value="http://172.17.134.16:3000/web_gui/index.html?tab=studentKiosk" required>
+                <small style="color:var(--text-muted)">
+                  Used by C++ QR generator to output scanable QR codes pointing to your local LAN IP.
+                </small>
+              </div>
+
+              <button type="submit" class="btn btn-primary">Save Settings in C++ Engine</button>
+            </form>
+
+            <!-- Campus Services Reference -->
+            <div style="background:var(--surface-subtle);padding:1.25rem;border-radius:var(--radius);border:1px solid var(--border)">
+              <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:0.75rem">Configured Campus Services</h3>
+              <ul style="font-size:0.85rem;line-height:1.8;padding-left:1.2rem;color:var(--text)">
+                <li><strong>ADM (Admission &amp; Registration):</strong> Base ~8 mins &bull; Handled by Counter 1, 4</li>
+                <li><strong>FEE (Fees &amp; Accounts):</strong> Base ~4 mins &bull; Handled by Counter 2, 4</li>
+                <li><strong>EXM (Examination &amp; Results):</strong> Base ~6 mins &bull; Handled by Counter 3, 4</li>
+                <li><strong>CRT (Certificates &amp; Transcripts):</strong> Base ~5 mins &bull; Handled by Counter 1, 3, 4</li>
+                <li><strong>GEN (General Enquiry):</strong> Base ~3 mins &bull; Handled by Counter 1, 2, 3, 4</li>
+              </ul>
+              <div style="margin-top:1.25rem;display:flex;gap:0.5rem">
+                <button class="btn btn-outline btn-sm" onclick="loadCollegeDemo()">Load Sample Demo</button>
+                <button class="btn btn-outline btn-sm" onclick="resetAllQueues()">Reset All Queues</button>
+              </div>
             </div>
-            <button type="submit" class="btn btn-primary">Save Settings in C++</button>
-          </form>
+          </div>
         </div>
       </div>
     </div>
@@ -683,7 +878,7 @@
         <button class="close-btn" onclick="closeModal('overrideModal')">&times;</button>
       </div>
       <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">
-        Assign a specific token directly to this counter. This will bypass normal FIFO order and be recorded as a manual override in the audit log.
+        Assign a specific token directly to this counter. This will bypass normal FIFO order and be recorded as a manual override in the C++ audit log.
       </p>
       <form onsubmit="handleManualOverride(event)">
         <input type="hidden" id="overrideCounterId">
@@ -700,22 +895,32 @@
     </div>
   </div>
 
-  <!-- APPLICATION LOGIC JAVASCRIPT (THIN API CLIENT ONLY) -->
+  <!-- APPLICATION LOGIC JAVASCRIPT (PRESENTATION & API LAYER ONLY) -->
   <script>
     // State received from C++
     let systemState = null;
+    let rawHistoryData = [];
     let activeTab = 'dashboard';
     let pollInterval = null;
     let API_BASE = '';
     let isConnectedToCpp = false;
 
-    // Intelligent C++ Backend Connection Detection:
-    // Probes:
-    // 1. Current Origin ('')
-    // 2. http://localhost:3000
-    // 3. http://localhost:8080
+    // Resolve query parameters (e.g. ?tab=studentKiosk)
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTabParam = urlParams.get('tab');
+
+    // Live Clock for Public Display
+    function updateClock() {
+      const now = new Date();
+      const el = document.getElementById('liveClock');
+      if (el) el.innerText = now.toLocaleTimeString();
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // C++ Backend Connection Detection
     async function resolveApiBase() {
-      const candidates = ['', 'http://localhost:3000', 'http://localhost:8080'];
+      const candidates = ['', 'http://localhost:3000'];
       for (let base of candidates) {
         try {
           const controller = new AbortController();
@@ -756,13 +961,33 @@
       const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
       if (btn) btn.classList.add('active');
 
-      if (tabId === 'history') fetchHistory();
-      if (tabId === 'reports') fetchReports();
+      if (tabId === 'queueHistory') fetchHistory();
+      if (tabId === 'settingsReports') fetchReports();
+    }
+
+    function switchQueueHistoryView(view) {
+      const liveBox = document.getElementById('viewLiveQueues');
+      const histBox = document.getElementById('viewTokenHistory');
+      const btnQ = document.getElementById('btnSubQueues');
+      const btnH = document.getElementById('btnSubHistory');
+
+      if (view === 'queues') {
+        liveBox.style.display = 'block';
+        histBox.style.display = 'none';
+        btnQ.classList.add('active');
+        btnH.classList.remove('active');
+      } else {
+        liveBox.style.display = 'none';
+        histBox.style.display = 'block';
+        btnQ.classList.remove('active');
+        btnH.classList.add('active');
+        fetchHistory();
+      }
     }
 
     function playAudioCall(tokenFormattedId, serviceName, counterName) {
       if ('speechSynthesis' in window) {
-        const text = `Attention please. Token ${tokenFormattedId.replace('-', ' ')} for ${serviceName}, please proceed to ${counterName}.`;
+        const text = `Token ${tokenFormattedId.replace('-', ' ')} for ${serviceName}, please proceed to ${counterName}.`;
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = 0.95;
         window.speechSynthesis.speak(utterance);
@@ -798,6 +1023,21 @@
       }
     }
 
+    async function fetchQrCode() {
+      const data = await apiRequest('/api/qrcode');
+      if (data && data.success) {
+        const holder1 = document.getElementById('dashboardQrHolder');
+        const holder2 = document.getElementById('kioskQrHolder');
+        const text1 = document.getElementById('dashboardQrUrlText');
+        const settingInput = document.getElementById('settingQrUrl');
+
+        if (holder1) holder1.innerHTML = data.svg;
+        if (holder2) holder2.innerHTML = data.svg;
+        if (text1) text1.innerText = data.url;
+        if (settingInput && !settingInput.dataset.modified) settingInput.value = data.url;
+      }
+    }
+
     async function fetchSystemStatus(showNotification = false) {
       const found = await resolveApiBase();
       const badge = document.getElementById('backendBadge');
@@ -815,53 +1055,43 @@
         }
       }
 
-      // If backend is not running on localhost, fallback to initial realistic demo state
-      badge.className = 'status-pill pill-blue';
-      badge.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2563eb"></span> Standalone Preview';
-      if (!systemState) {
-        systemState = {
-          totalWaiting: 3,
-          availableCounters: 2,
-          totalCounters: 4,
-          gracePeriodMinutes: 5,
-          autoWorkloadBalancing: true,
-          overallAvgWaitMinutes: 5.5,
-          services: [
-            { id: 'ADM', name: 'Admission & Registration', description: 'Document verification, branch change', color: '#2563eb', currentAvgDurationMinutes: 8.0 },
-            { id: 'FEE', name: 'Fees & Accounts', description: 'Tuition deposit, scholarship receipt', color: '#059669', currentAvgDurationMinutes: 4.0 },
-            { id: 'EXM', name: 'Examination & Results', description: 'Hall tickets, revaluation queries', color: '#d97706', currentAvgDurationMinutes: 6.0 },
-            { id: 'CRT', name: 'Transcripts & Certificates', description: 'Leaving certificates, bona fide', color: '#7c3aed', currentAvgDurationMinutes: 5.0 }
-          ],
-          counters: [
-            { id: 1, name: 'Counter 1 - Admission & Certs', operatorName: 'Prof. R. Sharma', status: 'SERVING', hasActiveToken: true, projectedWorkloadMinutes: 8.0, elapsedMinutes: 2.1, isGraceExpired: false, totalServedCount: 12, totalNoShowCount: 1, totalCancelledCount: 0, supportedServices: ['ADM', 'CRT'], currentToken: { id: 101, formattedId: 'ADM-101', studentName: 'Aarav Sharma', studentId: 'SE-2026-012', serviceName: 'Admission & Registration' } },
-            { id: 2, name: 'Counter 2 - Cashier & Fees', operatorName: 'Mrs. S. Deshmukh', status: 'AVAILABLE', hasActiveToken: false, projectedWorkloadMinutes: 4.0, elapsedMinutes: 0.0, isGraceExpired: false, totalServedCount: 18, totalNoShowCount: 0, totalCancelledCount: 1, supportedServices: ['FEE'], currentToken: null },
-            { id: 3, name: 'Counter 3 - Examination Wing', operatorName: 'Mr. A. Patil', status: 'SERVING', hasActiveToken: true, projectedWorkloadMinutes: 6.0, elapsedMinutes: 4.5, isGraceExpired: false, totalServedCount: 9, totalNoShowCount: 0, totalCancelledCount: 0, supportedServices: ['EXM', 'CRT'], currentToken: { id: 102, formattedId: 'EXM-102', studentName: 'Rahul Verma', studentId: 'BE-2024-045', serviceName: 'Examination & Results' } },
-            { id: 4, name: 'Counter 4 - Multi-Service Express', operatorName: 'Mr. V. Khan', status: 'AVAILABLE', hasActiveToken: false, projectedWorkloadMinutes: 5.0, elapsedMinutes: 0.0, isGraceExpired: false, totalServedCount: 22, totalNoShowCount: 2, totalCancelledCount: 0, supportedServices: ['ADM', 'FEE', 'EXM', 'CRT'], currentToken: null }
-          ],
-          queues: {
-            'ADM': [{ id: 103, formattedId: 'ADM-103', studentName: 'Priya Patel', studentId: 'TE-2025-088', arrivalTimeString: '10:30 AM', priority: 0 }],
-            'FEE': [{ id: 104, formattedId: 'FEE-104', studentName: 'Sneha Kulkarni', studentId: 'SE-2026-031', arrivalTimeString: '10:32 AM', priority: 0 }],
-            'EXM': [{ id: 105, formattedId: 'EXM-105', studentName: 'Kunal Bansal', studentId: 'FE-2027-104', arrivalTimeString: '10:35 AM', priority: 1 }],
-            'CRT': []
-          }
-        };
-      }
-      renderAll();
+      badge.className = 'status-pill pill-amber';
+      badge.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b"></span> C++ Connecting...';
       if (showNotification) {
-        showAlert('C++ backend not running locally on port 3000. Start run.bat to activate native C++ engine.', 'info');
+        showAlert('C++ backend not running locally on port 3000. Start smart_queue.exe or run.bat to activate native C++ engine.', 'warning');
       }
     }
 
     async function fetchHistory() {
       const data = await apiRequest('/api/history');
       if (!data) return;
+      rawHistoryData = data;
+      filterHistoryTable();
+    }
+
+    function filterHistoryTable() {
       const tbody = document.getElementById('historyTbody');
       tbody.innerHTML = '';
-      if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-muted)">No token history recorded yet.</td></tr>';
+
+      const query = (document.getElementById('historySearchInput').value || '').toLowerCase();
+      const statusFilter = document.getElementById('historyStatusFilter').value;
+
+      const filtered = rawHistoryData.filter(t => {
+        const matchStatus = (statusFilter === 'ALL' || t.status === statusFilter);
+        const matchQuery = !query ||
+          t.formattedId.toLowerCase().includes(query) ||
+          t.studentName.toLowerCase().includes(query) ||
+          t.studentId.toLowerCase().includes(query) ||
+          t.serviceName.toLowerCase().includes(query);
+        return matchStatus && matchQuery;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-muted)">No matching records found.</td></tr>';
         return;
       }
-      data.forEach(t => {
+
+      filtered.forEach(t => {
         let tagClass = 'tag-completed';
         if (t.status === 'CANCELLED') tagClass = 'tag-cancelled';
         if (t.status === 'NOSHOW') tagClass = 'tag-noshow';
@@ -898,14 +1128,20 @@
     function renderAll() {
       if (!systemState) return;
 
-      // KPI metrics
+      // Section 1 KPI metrics
       document.getElementById('kpiTotalWaiting').innerText = systemState.totalWaiting;
       document.getElementById('kpiAvailableCounters').innerText = `${systemState.availableCounters} / ${systemState.totalCounters}`;
-      document.getElementById('kpiAvgWait').innerHTML = `~${systemState.overallAvgWaitMinutes} <span style="font-size:1.1rem;font-weight:600">min</span>`;
-      document.getElementById('kpiGrace').innerHTML = `${systemState.gracePeriodMinutes} <span style="font-size:1.1rem;font-weight:600">min</span>`;
+      document.getElementById('kpiBusyCounters').innerText = systemState.busyCounters || 0;
+      document.getElementById('kpiPausedCounters').innerText = systemState.pausedCounters || 0;
+      document.getElementById('kpiAvgService').innerHTML = `~${systemState.overallAvgServiceDurationMinutes || 0} <span style="font-size:1rem;font-weight:600">min</span>`;
+      
+      // Waiting time estimation is strictly 0 min if queue is empty!
+      const waitVal = systemState.overallEstimatedWaitMinutes || 0;
+      document.getElementById('kpiEstimatedWait').innerHTML = `${waitVal} <span style="font-size:1rem;font-weight:600">min</span>`;
+      
       document.getElementById('settingGracePeriod').value = systemState.gracePeriodMinutes;
 
-      // Dashboard Counters
+      // Dashboard Counters & Operator Grid
       const dGrid = document.getElementById('dashboardCountersGrid');
       const opGrid = document.getElementById('operatorCountersGrid');
       const pubGrid = document.getElementById('publicMonitorGrid');
@@ -920,7 +1156,7 @@
           statusBadge = '<span class="status-pill pill-blue">Serving</span>';
           boxClass = 'serving';
         } else if (c.status === 'PAUSED') {
-          statusBadge = '<span class="status-pill" style="background:#fef3c7;color:#92400e">Paused</span>';
+          statusBadge = '<span class="status-pill pill-amber">Paused</span>';
           boxClass = 'paused';
         } else if (c.status === 'OFFLINE') {
           statusBadge = '<span class="status-pill" style="background:#f1f5f9;color:#64748b">Offline</span>';
@@ -1010,13 +1246,14 @@
 
         // 3. Public Monitor Card
         pubGrid.innerHTML += `
-          <div style="background:#1e293b;border-radius:var(--radius);padding:1.5rem;text-align:center;border:1px solid #334155">
-            <div style="font-size:0.9rem;text-transform:uppercase;color:#94a3b8;margin-bottom:0.5rem">${c.name}</div>
-            <div style="font-size:2.5rem;font-weight:900;color:${c.hasActiveToken ? '#60a5fa' : '#64748b'};margin-bottom:0.5rem">
+          <div style="background:#1e293b;border-radius:var(--radius);padding:1.5rem;text-align:center;border:1px solid #334155;box-shadow:0 10px 15px -3px rgba(0,0,0,0.3)">
+            <div style="font-size:0.85rem;text-transform:uppercase;color:#94a3b8;margin-bottom:0.4rem;font-weight:700">${c.name}</div>
+            <div style="font-size:0.75rem;color:#38bdf8;margin-bottom:0.6rem;letter-spacing:0.05em">NOW SERVING</div>
+            <div style="font-size:2.75rem;font-weight:900;color:${c.hasActiveToken ? '#60a5fa' : '#64748b'};margin-bottom:0.5rem;font-family:monospace">
               ${c.hasActiveToken ? c.currentToken.formattedId : 'READY'}
             </div>
-            <div style="font-size:1rem;color:#f8fafc;font-weight:600">${c.hasActiveToken ? c.currentToken.studentName : 'Next Student Please'}</div>
-            <div style="font-size:0.8rem;color:#94a3b8;margin-top:0.25rem">${c.hasActiveToken ? c.currentToken.serviceName : 'Available'}</div>
+            <div style="font-size:1.05rem;color:#f8fafc;font-weight:600">${c.hasActiveToken ? c.currentToken.studentName : 'Next Student Please'}</div>
+            <div style="font-size:0.8rem;color:#94a3b8;margin-top:0.25rem">${c.hasActiveToken ? c.currentToken.serviceName : 'Counter Available'}</div>
           </div>
         `;
       });
@@ -1037,7 +1274,7 @@
         `;
       });
 
-      // Detailed Service Queues Tab
+      // Detailed Service Queues (Section 5)
       const qContainer = document.getElementById('allQueuesContainer');
       qContainer.innerHTML = '';
       systemState.services.forEach(s => {
@@ -1069,7 +1306,7 @@
               <table>
                 <thead>
                   <tr>
-                    <th>Position</th>
+                    <th>FIFO Position</th>
                     <th>Token ID</th>
                     <th>Student Name</th>
                     <th>Roll / ID</th>
@@ -1091,6 +1328,10 @@
 
     async function handleGenerateToken(e) {
       e.preventDefault();
+      const btn = document.getElementById('btnGenToken');
+      btn.disabled = true;
+      btn.innerText = 'Generating in C++ Core...';
+
       const sId = document.getElementById('kioskService').value;
       const name = document.getElementById('kioskName').value.trim();
       const studentId = document.getElementById('kioskStudentId').value.trim();
@@ -1103,10 +1344,28 @@
         priority: priority
       });
 
+      btn.disabled = false;
+      btn.innerText = 'Generate Token (C++ Engine)';
+
       if (res && res.success) {
         document.getElementById('kioskName').value = '';
         document.getElementById('kioskStudentId').value = '';
         document.getElementById('kioskPriority').checked = false;
+
+        // Display Token Result Card
+        const card = document.getElementById('kioskGeneratedCard');
+        card.style.display = 'block';
+        document.getElementById('genTokenNumber').innerText = res.token.formattedId;
+        document.getElementById('genStudentName').innerText = `${res.token.studentName} (${res.token.studentId})`;
+        document.getElementById('genServiceName').innerText = res.token.serviceName;
+
+        // Query status for wait time
+        const searchRes = await apiRequest('/api/token/search', 'POST', { tokenId: res.token.id });
+        if (searchRes && searchRes.found) {
+          document.getElementById('genQueuePosition').innerText = `#${searchRes.position}`;
+          document.getElementById('genWaitTime').innerText = `~${Math.ceil(searchRes.estimatedWaitMinutes)} min`;
+        }
+
         showAlert(`Token ${res.token.formattedId} generated successfully! Added to ${res.token.serviceName} queue.`, 'success');
         fetchSystemStatus();
       } else {
@@ -1130,7 +1389,7 @@
           <div style="font-size:0.9rem;line-height:1.6">
             <strong>Student:</strong> ${t.studentName} (${t.studentId})<br>
             <strong>Service:</strong> ${t.serviceName}<br>
-            <strong>Position:</strong> ${res.position === 0 ? 'Currently at counter' : '#' + res.position + ' in waiting line'}<br>
+            <strong>Position:</strong> ${res.position === 0 ? 'Currently serving at counter' : '#' + res.position + ' in waiting line'}<br>
             <strong>Estimated Wait Time:</strong> ~${Math.ceil(res.estimatedWaitMinutes)} minutes<br>
             <div style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)">
               ${res.message}
@@ -1239,15 +1498,25 @@
     async function handleSaveSettings(e) {
       e.preventDefault();
       const grace = parseInt(document.getElementById('settingGracePeriod').value);
-      const res = await apiRequest('/api/settings', 'POST', { gracePeriodMinutes: grace });
+      const qrUrl = document.getElementById('settingQrUrl').value.trim();
+
+      const res = await apiRequest('/api/settings', 'POST', {
+        gracePeriodMinutes: grace,
+        qrCodeTargetUrl: qrUrl
+      });
       if (res && res.success) {
-        showAlert('Grace period updated in C++ engine.', 'success');
+        showAlert('Settings saved and QR code updated in C++ engine!', 'success');
+        fetchQrCode();
         fetchSystemStatus();
       }
     }
 
-    // Auto-polling every 4 seconds to sync live counter states
+    // Initialize application
+    if (initialTabParam) {
+      switchTab(initialTabParam);
+    }
     fetchSystemStatus();
+    fetchQrCode();
     pollInterval = setInterval(() => {
       fetchSystemStatus(false);
     }, 4000);

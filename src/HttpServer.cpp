@@ -251,6 +251,37 @@ void HttpServer::handleClient(SOCKET clientSocket) {
         else if (cleanUri == "/api/reports" && method == "GET") {
             jsonResponse = engine->getReportsJson();
         }
+        else if (cleanUri == "/api/qrcode" && method == "GET") {
+            std::string url = engine->getQrCodeTargetUrl();
+            std::string svg = engine->getQrCodeSvg();
+            std::string uri = engine->getQrCodeDataUri();
+
+            // Escape svg for JSON string
+            std::string escSvg = "";
+            for (size_t i = 0; i < svg.size(); ++i) {
+                if (svg[i] == '"') escSvg += "\\\"";
+                else if (svg[i] == '\n') escSvg += "\\n";
+                else if (svg[i] == '\r') continue;
+                else escSvg += svg[i];
+            }
+            jsonResponse = "{\"success\":true,\"url\":\"" + url + "\",\"svg\":\"" + escSvg + "\",\"dataUri\":\"" + uri + "\"}";
+        }
+        else if (cleanUri == "/api/qrcode.svg" && method == "GET") {
+            std::string svg = engine->getQrCodeSvg();
+            LeaveCriticalSection(&engineLock);
+
+            std::ostringstream resStream;
+            resStream << "HTTP/1.1 200 OK\r\n"
+                      << "Content-Type: image/svg+xml; charset=utf-8\r\n"
+                      << "Access-Control-Allow-Origin: *\r\n"
+                      << "Content-Disposition: attachment; filename=\"student_kiosk_qr.svg\"\r\n"
+                      << "Content-Length: " << svg.size() << "\r\n"
+                      << "Connection: close\r\n\r\n"
+                      << svg;
+            std::string fullRes = resStream.str();
+            send(clientSocket, fullRes.c_str(), static_cast<int>(fullRes.size()), 0);
+            return;
+        }
         else if (cleanUri == "/api/token/generate" && method == "POST") {
             std::string sId = extractJsonValue(body, "serviceId");
             std::string sName = extractJsonValue(body, "studentName");
@@ -367,6 +398,10 @@ void HttpServer::handleClient(SOCKET clientSocket) {
             if (!graceStr.empty()) {
                 engine->setGracePeriodMinutes(std::atoi(graceStr.c_str()));
             }
+            std::string qrTarget = extractJsonValue(body, "qrCodeTargetUrl");
+            if (!qrTarget.empty()) {
+                engine->setQrCodeTargetUrl(qrTarget);
+            }
             jsonResponse = "{\"success\":true}";
         }
         else if (cleanUri == "/api/demo/load" && method == "POST") {
@@ -395,7 +430,13 @@ void HttpServer::handleClient(SOCKET clientSocket) {
                   << jsonResponse;
 
         std::string fullRes = resStream.str();
-        send(clientSocket, fullRes.c_str(), static_cast<int>(fullRes.size()), 0);
+        int totalSent = 0;
+        int toSend = static_cast<int>(fullRes.size());
+        while (totalSent < toSend) {
+            int sent = send(clientSocket, fullRes.c_str() + totalSent, toSend - totalSent, 0);
+            if (sent <= 0) break;
+            totalSent += sent;
+        }
         return;
     }
 
@@ -430,7 +471,13 @@ void HttpServer::handleClient(SOCKET clientSocket) {
                   << "Connection: close\r\n\r\n"
                   << fileContent;
         std::string fullRes = resStream.str();
-        send(clientSocket, fullRes.c_str(), static_cast<int>(fullRes.size()), 0);
+        int totalSent = 0;
+        int toSend = static_cast<int>(fullRes.size());
+        while (totalSent < toSend) {
+            int sent = send(clientSocket, fullRes.c_str() + totalSent, toSend - totalSent, 0);
+            if (sent <= 0) break;
+            totalSent += sent;
+        }
         return;
     }
 
@@ -444,6 +491,12 @@ void HttpServer::handleClient(SOCKET clientSocket) {
               << fileContent;
 
     std::string fullRes = resStream.str();
-    send(clientSocket, fullRes.c_str(), static_cast<int>(fullRes.size()), 0);
+    int totalSent = 0;
+    int toSend = static_cast<int>(fullRes.size());
+    while (totalSent < toSend) {
+        int sent = send(clientSocket, fullRes.c_str() + totalSent, toSend - totalSent, 0);
+        if (sent <= 0) break;
+        totalSent += sent;
+    }
 }
 

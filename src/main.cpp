@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
         std::cout << "  +---------------------------------------------------------------------------+\n";
         std::cout << "  | Total Waiting: " << std::left << std::setw(4) << engine.getTotalWaitingCount()
                   << " | Available Counters: " << std::setw(4) << engine.getAvailableCounterCount()
-                  << " | Overall Avg Wait: " << std::fixed << std::setprecision(1) << engine.getOverallAvgWaitMinutes() << " mins    |\n";
+                  << " | Overall Est Wait: " << std::fixed << std::setprecision(1) << engine.getOverallEstimatedWaitMinutes() << " mins    |\n";
         std::cout << "  +---------------------------------------------------------------------------+\n";
 
         // Show Counters

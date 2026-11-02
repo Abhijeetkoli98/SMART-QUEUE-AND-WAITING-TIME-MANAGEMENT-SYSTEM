@@ -19,9 +19,9 @@ private:
     std::vector<Token> auditHistory; // All completed, cancelled, no-show
 
     int nextNumericId;
-    int gracePeriodMinutes; // e.g. 5 minutes before no-show can be declared
-    bool autoWorkloadBalancing; // whether available counters automatically pull tokens
-
+    int gracePeriodMinutes; // default 5 minutes
+    bool autoWorkloadBalancing;
+    std::string qrCodeTargetUrl; // Configurable URL embedded in QR Code
     std::string dataDirectory;
 
 public:
@@ -42,11 +42,12 @@ public:
     Counter* getCounter(int counterId);
     const std::vector<Counter>& getCounters() const { return counters; }
 
-    // Feature C: Dynamic Waiting-Time Calculation
-    // Calculates estimated wait in minutes for a given token position & service
+    // Feature C: Dynamic Waiting-Time Calculation (Accurate, 0 min when empty)
     double calculateEstimatedWaitMinutes(const std::string& serviceId, int position) const;
     bool searchToken(int tokenId, Token& outToken, int& outQueuePos,
                      double& outEstimatedWait, std::string& outMsg) const;
+    double getOverallEstimatedWaitMinutes() const;
+    double getOverallAvgServiceDurationMinutes() const;
 
     // Feature D: No-Show and Cancellation Management
     bool cancelTokenInQueue(int tokenId, const std::string& reason, Token& outCancelled);
@@ -57,20 +58,23 @@ public:
     bool isGracePeriodExpired(int counterId) const;
 
     // Feature E: Intelligent Workload Balancing & Dispatch
-    // Automatically picks the best eligible token for this counter based on FIFO & priority
     bool callNextForCounter(int counterId, Token& outCalledToken);
-    // Manual operator override: call a specific token ID
     bool manualOverrideCall(int counterId, int tokenId, Token& outCalledToken);
-    // Mark current service completed at counter, update service dynamic average
     bool completeServiceAtCounter(int counterId, Token& outCompletedToken);
-    // Workload metric for a counter in estimated minutes
     double getCounterProjectedWorkloadMinutes(int counterId) const;
+
+    // QR Code Management (Generated in C++)
+    void setQrCodeTargetUrl(const std::string& url);
+    std::string getQrCodeTargetUrl() const { return qrCodeTargetUrl; }
+    std::string getQrCodeSvg() const;
+    std::string getQrCodeDataUri() const;
 
     // Reporting & Aggregate Statistics
     int getTotalWaitingCount() const;
     int getWaitingCountForService(const std::string& serviceId) const;
     int getAvailableCounterCount() const;
-    double getOverallAvgWaitMinutes() const;
+    int getBusyCounterCount() const;
+    int getPausedCounterCount() const;
 
     // Settings & State
     void setAutoWorkloadBalancing(bool enabled) { autoWorkloadBalancing = enabled; }
@@ -93,4 +97,3 @@ public:
 };
 
 #endif // QUEUE_ENGINE_H
-

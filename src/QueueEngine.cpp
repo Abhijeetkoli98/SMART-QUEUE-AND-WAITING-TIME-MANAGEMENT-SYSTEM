@@ -1,4 +1,5 @@
 #include "QueueEngine.h"
+#include "QRCodeGenerator.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -9,6 +10,7 @@ QueueEngine::QueueEngine(const std::string& dataDir)
     : nextNumericId(101),
       gracePeriodMinutes(5),
       autoWorkloadBalancing(true),
+      qrCodeTargetUrl("http://172.17.134.16:3000/web_gui/index.html?tab=studentKiosk"),
       dataDirectory(dataDir)
 {
     initializeDefaultCollegeServices();
@@ -22,15 +24,17 @@ QueueEngine::~QueueEngine() {
 
 void QueueEngine::initializeDefaultCollegeServices() {
     services["ADM"] = ServiceType("ADM", "Admission & Registration",
-                                  "Document verification, branch change, new admissions", "#2563eb", 8.0);
+                                  "Document verification, branch allocation, enrollment", "#2563eb", 8.0);
     services["FEE"] = ServiceType("FEE", "Fees & Accounts",
-                                  "Tuition fee deposit, scholarship receipts, fines", "#059669", 4.0);
+                                  "Tuition fee deposit, scholarship receipts, challans", "#059669", 4.0);
     services["EXM"] = ServiceType("EXM", "Examination & Results",
                                   "Hall tickets, revaluation, grade card queries", "#d97706", 6.0);
     services["CRT"] = ServiceType("CRT", "Transcripts & Certificates",
                                   "Leaving certificates, bona fide, official transcripts", "#7c3aed", 5.0);
+    services["GEN"] = ServiceType("GEN", "General Enquiry",
+                                  "College campus guidance, office timings, general queries", "#0891b2", 3.0);
 
-    // Initialize empty FIFO queue for each service
+    // Initialize an empty FIFO queue for each service
     for (std::map<std::string, ServiceType>::iterator it = services.begin(); it != services.end(); ++it) {
         if (queues.find(it->first) == queues.end()) {
             queues[it->first] = ServiceQueue();
@@ -44,15 +48,18 @@ void QueueEngine::initializeDefaultCounters() {
     std::vector<std::string> c1Svcs;
     c1Svcs.push_back("ADM");
     c1Svcs.push_back("CRT");
+    c1Svcs.push_back("GEN");
     counters.push_back(Counter(1, "Counter 1 - Admission & Certs", "Prof. R. Sharma", c1Svcs));
 
     std::vector<std::string> c2Svcs;
     c2Svcs.push_back("FEE");
+    c2Svcs.push_back("GEN");
     counters.push_back(Counter(2, "Counter 2 - Cashier & Fees", "Mrs. S. Deshmukh", c2Svcs));
 
     std::vector<std::string> c3Svcs;
     c3Svcs.push_back("EXM");
     c3Svcs.push_back("CRT");
+    c3Svcs.push_back("GEN");
     counters.push_back(Counter(3, "Counter 3 - Examination Wing", "Mr. A. Patil", c3Svcs));
 
     std::vector<std::string> c4Svcs;
@@ -60,6 +67,7 @@ void QueueEngine::initializeDefaultCounters() {
     c4Svcs.push_back("FEE");
     c4Svcs.push_back("EXM");
     c4Svcs.push_back("CRT");
+    c4Svcs.push_back("GEN");
     counters.push_back(Counter(4, "Counter 4 - Multi-Service Express", "Mr. V. Khan", c4Svcs));
 }
 
@@ -67,7 +75,7 @@ Token QueueEngine::generateToken(const std::string& serviceId, const std::string
                                  const std::string& studentId, int priority) {
     std::string sId = serviceId;
     if (services.find(sId) == services.end()) {
-        sId = "ADM"; // fallback
+        sId = "GEN"; // fallback
     }
 
     std::string sName = services[sId].getName();
@@ -103,6 +111,7 @@ bool QueueEngine::setCounterServices(int counterId, const std::vector<std::strin
     return true;
 }
 
+// Dynamic Waiting-Time Calculation (Strictly Accurate & 0 min when line is clear)
 double QueueEngine::calculateEstimatedWaitMinutes(const std::string& serviceId, int position) const {
     if (position <= 0) return 0.0;
 
@@ -112,30 +121,88 @@ double QueueEngine::calculateEstimatedWaitMinutes(const std::string& serviceId, 
         avgDuration = sIt->second.getCurrentAvgDurationMinutes();
     }
 
-    // Count how many online/active counters can handle this service
-    int activeCompatibleCounters = 0;
-    double remainingServingTime = 0.0;
+    int availableCompatibleCounters = 0;
+    int totalActiveCompatibleCounters = 0;
+    double minRemainingBusy = 999.0;
+    double totalRemainingBusy = 0.0;
 
     for (size_t i = 0; i < counters.size(); ++i) {
-        if (counters[i].getStatus() == COUNTER_OFFLINE) continue;
+        if (counters[i].getStatus() == COUNTER_OFFLINE || counters[i].getStatus() == COUNTER_PAUSED) continue;
+
         if (counters[i].canHandleService(serviceId)) {
-            activeCompatibleCounters++;
-            if (counters[i].getStatus() == COUNTER_SERVING && counters[i].getHasActiveToken()) {
+            totalActiveCompatibleCounters++;
+            if (counters[i].getStatus() == COUNTER_AVAILABLE) {
+                availableCompatibleCounters++;
+            } else if (counters[i].getStatus() == COUNTER_SERVING && counters[i].getHasActiveToken()) {
                 double elapsed = counters[i].getElapsedServiceMinutes();
                 double rem = avgDuration - elapsed;
-                if (rem > 0) remainingServingTime += rem;
+                if (rem < 0.5) rem = 0.5;
+                if (rem < minRemainingBusy) minRemainingBusy = rem;
+                totalRemainingBusy += rem;
             }
         }
     }
 
-    if (activeCompatibleCounters == 0) activeCompatibleCounters = 1;
+    if (totalActiveCompatibleCounters == 0) totalActiveCompatibleCounters = 1;
 
+    // Rule 1: If next in line (position 1) and a counter is free -> 0 minutes wait!
+    if (position == 1 && availableCompatibleCounters > 0) {
+        return 0.0;
+    }
+
+    // Rule 2: If position 1 and all counters are busy -> wait only for earliest busy desk to finish
+    if (position == 1 && availableCompatibleCounters == 0) {
+        return (minRemainingBusy < 990.0) ? std::ceil(minRemainingBusy) : std::ceil(avgDuration);
+    }
+
+    // Rule 3: Students ahead in line
     int peopleAhead = position - 1;
-    double wait = (peopleAhead * avgDuration) / static_cast<double>(activeCompatibleCounters);
-    wait += (remainingServingTime / static_cast<double>(activeCompatibleCounters));
+    double wait = (peopleAhead * avgDuration) / static_cast<double>(totalActiveCompatibleCounters);
+    if (availableCompatibleCounters == 0 && minRemainingBusy < 990.0) {
+        wait += (minRemainingBusy / static_cast<double>(totalActiveCompatibleCounters));
+    }
 
-    if (wait < 1.0 && position > 0) wait = 1.0;
+    return (wait <= 0.0) ? 0.0 : std::ceil(wait);
+}
+
+// Estimated wait time for a new visitor walking in right now
+double QueueEngine::getOverallEstimatedWaitMinutes() const {
+    int totalWaiting = getTotalWaitingCount();
+    if (totalWaiting == 0) {
+        if (getAvailableCounterCount() > 0) {
+            return 0.0; // Counter is ready immediately
+        }
+        // No one waiting, but all counters are serving
+        double minRem = 999.0;
+        for (size_t i = 0; i < counters.size(); ++i) {
+            if (counters[i].getStatus() == COUNTER_SERVING) {
+                double elapsed = counters[i].getElapsedServiceMinutes();
+                double rem = 5.0 - elapsed;
+                if (rem < 0.5) rem = 0.5;
+                if (rem < minRem) minRem = rem;
+            }
+        }
+        return (minRem < 990.0) ? std::ceil(minRem) : 0.0;
+    }
+
+    // Queue has waiting students: calculate average wait
+    int activeCounters = getAvailableCounterCount() + getBusyCounterCount();
+    if (activeCounters == 0) activeCounters = 1;
+
+    double avgServiceTime = getOverallAvgServiceDurationMinutes();
+    double wait = (totalWaiting * avgServiceTime) / static_cast<double>(activeCounters);
     return std::ceil(wait);
+}
+
+// Overall historical average duration of services
+double QueueEngine::getOverallAvgServiceDurationMinutes() const {
+    if (completedHistory.empty()) return 5.0; // standard baseline
+    double totalDuration = 0.0;
+    for (size_t i = 0; i < completedHistory.size(); ++i) {
+        totalDuration += completedHistory[i].getActualServiceDurationMinutes();
+    }
+    double avg = totalDuration / static_cast<double>(completedHistory.size());
+    return (avg <= 0.0) ? 5.0 : avg;
 }
 
 bool QueueEngine::searchToken(int tokenId, Token& outToken, int& outQueuePos,
@@ -337,7 +404,7 @@ double QueueEngine::getCounterProjectedWorkloadMinutes(int counterId) const {
             break;
         }
     }
-    if (!c || c->getStatus() == COUNTER_OFFLINE) return 0.0;
+    if (!c || c->getStatus() == COUNTER_OFFLINE || c->getStatus() == COUNTER_PAUSED) return 0.0;
 
     double workload = 0.0;
     if (c->getHasActiveToken()) {
@@ -360,10 +427,10 @@ double QueueEngine::getCounterProjectedWorkloadMinutes(int counterId) const {
             std::map<std::string, ServiceType>::const_iterator sit = services.find(sId);
             if (sit != services.end()) dur = sit->second.getCurrentAvgDurationMinutes();
 
-            // Count how many counters share this service
+            // Count how many online counters share this service
             int sharers = 0;
             for (size_t k = 0; k < counters.size(); ++k) {
-                if (counters[k].canHandleService(sId) && counters[k].getStatus() != COUNTER_OFFLINE) {
+                if (counters[k].canHandleService(sId) && counters[k].getStatus() != COUNTER_OFFLINE && counters[k].getStatus() != COUNTER_PAUSED) {
                     sharers++;
                 }
             }
@@ -373,6 +440,21 @@ double QueueEngine::getCounterProjectedWorkloadMinutes(int counterId) const {
     }
 
     return std::ceil(workload);
+}
+
+void QueueEngine::setQrCodeTargetUrl(const std::string& url) {
+    if (!url.empty()) {
+        qrCodeTargetUrl = url;
+        saveState();
+    }
+}
+
+std::string QueueEngine::getQrCodeSvg() const {
+    return QRCodeGenerator::generateSvg(qrCodeTargetUrl);
+}
+
+std::string QueueEngine::getQrCodeDataUri() const {
+    return QRCodeGenerator::generateDataUri(qrCodeTargetUrl);
 }
 
 int QueueEngine::getTotalWaitingCount() const {
@@ -397,13 +479,20 @@ int QueueEngine::getAvailableCounterCount() const {
     return count;
 }
 
-double QueueEngine::getOverallAvgWaitMinutes() const {
-    if (completedHistory.empty()) return 5.0;
-    double totalWait = 0.0;
-    for (size_t i = 0; i < completedHistory.size(); ++i) {
-        totalWait += completedHistory[i].getActualWaitDurationMinutes();
+int QueueEngine::getBusyCounterCount() const {
+    int count = 0;
+    for (size_t i = 0; i < counters.size(); ++i) {
+        if (counters[i].getStatus() == COUNTER_SERVING) count++;
     }
-    return totalWait / static_cast<double>(completedHistory.size());
+    return count;
+}
+
+int QueueEngine::getPausedCounterCount() const {
+    int count = 0;
+    for (size_t i = 0; i < counters.size(); ++i) {
+        if (counters[i].getStatus() == COUNTER_PAUSED) count++;
+    }
+    return count;
 }
 
 void QueueEngine::updateServiceBaseDuration(const std::string& sId, double mins) {
@@ -418,6 +507,7 @@ void QueueEngine::saveState() {
     if (out.is_open()) {
         out << nextNumericId << "\n";
         out << gracePeriodMinutes << "\n";
+        out << qrCodeTargetUrl << "\n";
         out.close();
     }
 
@@ -445,9 +535,14 @@ void QueueEngine::loadState() {
     std::ifstream in((dataDirectory + "/token_config.txt").c_str());
     if (in.is_open()) {
         int id, grace;
+        std::string qrUrl;
         if (in >> id >> grace) {
             if (id >= 101) nextNumericId = id;
             if (grace > 0) gracePeriodMinutes = grace;
+            in >> std::ws;
+            if (std::getline(in, qrUrl) && !qrUrl.empty()) {
+                qrCodeTargetUrl = qrUrl;
+            }
         }
         in.close();
     }
@@ -506,17 +601,15 @@ void QueueEngine::exportHistoryCsv(const std::string& filepath) const {
 }
 
 void QueueEngine::loadCollegeDemoData() {
-    // Generate realistic student queue
     generateToken("ADM", "Aarav Sharma", "SE-2026-012", 0);
     generateToken("FEE", "Priya Patel", "TE-2025-088", 0);
     generateToken("EXM", "Rahul Verma", "BE-2024-045", 1); // priority token
     generateToken("CRT", "Sneha Kulkarni", "ALUMNI-2023", 0);
-    generateToken("ADM", "Vikram Singh", "FE-2027-104", 0);
-    generateToken("FEE", "Ananya Deshpande", "SE-2026-095", 0);
-    generateToken("EXM", "Kunal Bansal", "SE-2026-031", 0);
-    generateToken("CRT", "Meera Nair", "TE-2025-119", 0);
+    generateToken("GEN", "Vikram Singh", "FE-2027-104", 0);
+    generateToken("ADM", "Ananya Deshpande", "SE-2026-095", 0);
+    generateToken("FEE", "Kunal Bansal", "SE-2026-031", 0);
+    generateToken("EXM", "Meera Nair", "TE-2025-119", 0);
 
-    // Call two tokens to counters to demonstrate live counter serving
     Token called1, called2;
     callNextForCounter(1, called1);
     callNextForCounter(2, called2);
@@ -542,10 +635,14 @@ std::string QueueEngine::getFullStatusJson() const {
     oss << "{"
         << "\"totalWaiting\":" << getTotalWaitingCount() << ","
         << "\"availableCounters\":" << getAvailableCounterCount() << ","
+        << "\"busyCounters\":" << getBusyCounterCount() << ","
+        << "\"pausedCounters\":" << getPausedCounterCount() << ","
         << "\"totalCounters\":" << counters.size() << ","
         << "\"gracePeriodMinutes\":" << gracePeriodMinutes << ","
         << "\"autoWorkloadBalancing\":" << (autoWorkloadBalancing ? "true" : "false") << ","
-        << "\"overallAvgWaitMinutes\":" << std::fixed << std::setprecision(1) << getOverallAvgWaitMinutes() << ",";
+        << "\"overallAvgServiceDurationMinutes\":" << std::fixed << std::setprecision(1) << getOverallAvgServiceDurationMinutes() << ","
+        << "\"overallEstimatedWaitMinutes\":" << std::fixed << std::setprecision(1) << getOverallEstimatedWaitMinutes() << ","
+        << "\"qrCodeTargetUrl\":\"" << qrCodeTargetUrl << "\",";
 
     // Services
     oss << "\"services\":[";
@@ -608,7 +705,7 @@ std::string QueueEngine::getHistoryJson() const {
     oss << "[";
     for (size_t i = 0; i < auditHistory.size(); ++i) {
         if (i > 0) oss << ",";
-        oss << auditHistory[auditHistory.size() - 1 - i].toJson(); // reverse order
+        oss << auditHistory[auditHistory.size() - 1 - i].toJson();
     }
     oss << "]";
     return oss.str();
@@ -631,8 +728,8 @@ std::string QueueEngine::getReportsJson() const {
         << "\"totalCancelled\":" << totalCancelled << ","
         << "\"totalNoShow\":" << totalNoShow << ","
         << "\"totalProcessed\":" << auditHistory.size() << ","
-        << "\"overallAvgWaitMinutes\":" << std::fixed << std::setprecision(1) << getOverallAvgWaitMinutes()
+        << "\"overallAvgServiceDurationMinutes\":" << std::fixed << std::setprecision(1) << getOverallAvgServiceDurationMinutes() << ","
+        << "\"overallEstimatedWaitMinutes\":" << std::fixed << std::setprecision(1) << getOverallEstimatedWaitMinutes()
         << "}";
     return oss.str();
 }
-

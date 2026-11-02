@@ -3,7 +3,7 @@ echo ===========================================================================
 echo   Compiling Smart Queue & Waiting-Time Management System (Genuine C++ Core)
 echo ===============================================================================
 
-g++ -std=c++11 -Wall -Wextra src\Token.cpp src\ServiceQueue.cpp src\Counter.cpp src\QueueEngine.cpp src\HttpServer.cpp src\main.cpp -o smart_queue.exe -lws2_32
+g++ -std=c++11 -Wall -Wextra src\Token.cpp src\ServiceQueue.cpp src\Counter.cpp src\QueueEngine.cpp src\QRCodeGenerator.cpp src\qrcodegen.cpp src\HttpServer.cpp src\main.cpp -o smart_queue.exe -lws2_32
 
 if %ERRORLEVEL% equ 0 (
     echo.

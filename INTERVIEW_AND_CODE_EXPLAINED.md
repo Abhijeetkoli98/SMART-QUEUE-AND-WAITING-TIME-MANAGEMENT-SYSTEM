@@ -37,31 +37,59 @@
 This college project implements a complete, enterprise-grade **Smart Queue & Waiting-Time Management System**.
 
 ### ⚠️ Strict Architectural Rule:
-- **100% of the core logic, state management, queue operations, workload balancing algorithms, calculations, and data persistence are implemented in C++.**
-- The frontend (HTML5/CSS3/JavaScript) contains **zero business logic**. It functions strictly as a presentation layer that sends asynchronous HTTP JSON requests (`fetch`) to the native C++ backend running on port `8080`.
+- **100% of the core logic, state management, queue operations, workload balancing algorithms, QR code generation, calculations, and data persistence are implemented in C++.**
+- The frontend (HTML5/CSS3/JavaScript) contains **zero business logic**. It functions strictly as a presentation layer that sends asynchronous HTTP JSON requests (`fetch`) to the native C++ backend running on port `3000`.
 - The C++ backend hosts a genuine native HTTP REST server built with Windows Winsock2 (`ws2_32`). It directly parses HTTP requests and returns JSON without any third-party framework or Node.js runtime requirement.
 
 ---
 
-# 2. DETAILED BREAKDOWN OF THE 5 CORE FEATURES
+# 2. DETAILED BREAKDOWN OF THE 6 MAIN SECTIONS
 
-### Feature A: Multiple Service Queues
-Instead of mixing all campus visitors into a single chaotic line, the system provides dedicated FIFO queues for each service:
-1. **`ADM` — Admission & Registration:** Document verification, branch allocation, eligibility certificates.
-2. **`FEE` — Fees & Financial Accounts:** Tuition deposits, examination fees, scholarship concessions.
-3. **`EXM` — Examination & Results:** Hall tickets, revaluation forms, marksheet queries.
-4. **`CRT` — Transcripts & Certificates:** Bona fide certificates, leaving certificates, official transcripts.
+### Section 1: Dashboard (Admin Overview)
+- **Top Metrics Cards:** Total Waiting Students, Available Counters, Busy Counters, Paused/Offline Counters, Average Service Duration (EMA), and Estimated Waiting Time (strictly 0 mins when queues are empty).
+- **Active Service Counters:** Real-time counter cards showing operator name, current token, elapsed service time, and current workload.
+- **Native C++ QR Code Card:** Real-time SVG rendering of the mobile Student Kiosk URL (`http://172.17.134.16:3000/web_gui/index.html?tab=studentKiosk`), allowing any smartphone on campus Wi-Fi to scan and join the queue. Also features a direct SVG download button.
+- **Live Service Queues Summary:** Quick overview of the 5 services: `ADM`, `FEE`, `EXM`, `CRT`, and `GEN`.
 
-Each service maintains its own **Custom Singly Linked-List FIFO Queue**. Tokens have distinct prefixes (e.g. `ADM-101`, `FEE-102`, `EXM-103`, `CRT-104`).
+### Section 2: Student Kiosk (Token Generation & Verification)
+- **Token Generation Form:** Student selects from 5 college services (Admission, Fees, Examination, Certificates, General Enquiry), enters Name and Roll Number, selects Priority status if applicable, and clicks "Generate Token".
+- **Double-Submit Protection:** Prevents duplicate token creation.
+- **Token Result Card:** Displays unique token number (e.g. `ADM-101`), student name, queue position, and dynamic estimated wait time calculated in C++.
+- **Token Search & Status Check:** Students can enter their numeric token ID to check live position and remaining wait time.
+
+### Section 3: Operator Panel (Counter Management)
+- **Assigned Counters Station:** Displays Counter 1 to 4 with operator names and compatible services.
+- **Operator Actions:** "Call Next Student (Intelligent Workload Balancing)", "Manual Override: Call Specific Token", "Mark Service Completed", "Mark No-Show", "Cancel Service", and counter status toggles (Available / Pause / Offline).
+- **Grace Period Indicator:** Automatically highlights when student arrival grace period (5 mins) has expired.
+
+### Section 4: Public Display Monitor (Student Information Screen)
+- **Large Waiting Hall Screen:** Designed for TV displays in waiting lobbies with high-contrast dark navy theme (`#0f172a`).
+- **NOW SERVING Screen:** Prominently highlights currently serving token number, counter number, student name, and service type.
+- **Live Campus Clock & Audio Chime:** Text-to-speech / audio announcement when tokens are called.
+
+### Section 5: Queue & History (FIFO Queues & Audit Log)
+- **Live FIFO Queues View:** Displays dynamic singly linked-list queues for each service, showing exact FIFO positions (`#1`, `#2`...), Token IDs, student roll numbers, arrival timestamps, and priority tags.
+- **Complete Token History View:** Search and filter historical records by status (Completed, Cancelled, No-Show) and service type.
+
+### Section 6: Settings & Reports (Analytics, CSV Export, QR Config)
+- **Performance Analytics Cards:** Total Processed, Completed Services, Cancelled Tokens, No-Show Incidents, Average Service Duration.
+- **CSV Export:** Direct download of `completed_records.csv` generated by C++.
+- **System Configuration:** Dynamic updates to No-Show Grace Period and Mobile Kiosk QR Code Target URL persisted into C++ engine.
+- **Demo Controls:** Quick buttons to load realistic sample demo data or reset queues.
 
 ---
 
-### Feature B: Multiple Counters Management
-The system supports multiple physical counters operating concurrently:
-- **Counter 1 (Prof. R. Sharma):** Handles `ADM` and `CRT`.
-- **Counter 2 (Mrs. S. Deshmukh):** Handles `FEE`.
-- **Counter 3 (Mr. A. Patil):** Handles `EXM` and `CRT`.
-- **Counter 4 (Mr. V. Khan):** Multi-Service Express Counter handling `ADM`, `FEE`, `EXM`, and `CRT`.
+### Campus Services & Counters Configuration:
+1. **`ADM` — Admission & Registration:** Base ~8 mins &bull; Handled by Counter 1, 4
+2. **`FEE` — Fees & Accounts:** Base ~4 mins &bull; Handled by Counter 2, 4
+3. **`EXM` — Examination & Results:** Base ~6 mins &bull; Handled by Counter 3, 4
+4. **`CRT` — Transcripts & Certificates:** Base ~5 mins &bull; Handled by Counter 1, 3, 4
+5. **`GEN` — General Enquiry:** Base ~3 mins &bull; Handled by Counter 1, 2, 3, 4
+
+- **Counter 1 (Prof. R. Sharma):** Handles `ADM`, `CRT`, `GEN`.
+- **Counter 2 (Mrs. S. Deshmukh):** Handles `FEE`, `GEN`.
+- **Counter 3 (Mr. A. Patil):** Handles `EXM`, `CRT`, `GEN`.
+- **Counter 4 (Mr. V. Khan):** Multi-Service Express Counter handling all 5 services.
 
 Each counter has an explicit lifecycle state:
 - `AVAILABLE`: Ready to accept the next student.
