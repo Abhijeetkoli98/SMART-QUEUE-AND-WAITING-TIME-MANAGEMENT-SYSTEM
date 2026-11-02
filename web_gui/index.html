@@ -1035,6 +1035,13 @@
         if (holder2) holder2.innerHTML = data.svg;
         if (text1) text1.innerText = data.url;
         if (settingInput && !settingInput.dataset.modified) settingInput.value = data.url;
+      } else if (!isConnectedToCpp) {
+        // Standalone preview SVG placeholder
+        const demoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" stroke="none"><rect width="100%" height="100%" fill="#ffffff"/><path d="M4,4h7v7h-7z M5,5v5h5v-5z M6,6h3v3h-3z M22,4h7v7h-7z M23,5v5h5v-5z M24,6h3v3h-3z M4,22h7v7h-7z M5,23v5h5v-5z M6,24h3v3h-3z M13,5h2v2h-2z M17,5h2v2h-2z M13,9h2v2h-2z M17,9h2v2h-2z M13,13h7v7h-7z M15,15v3h3v-3z M23,13h2v2h-2z M27,15h2v2h-2z M13,23h2v2h-2z M17,25h4v2h-4z M23,23h4v4h-4z" fill="#1e40af"/></svg>`;
+        const holder1 = document.getElementById('dashboardQrHolder');
+        const holder2 = document.getElementById('kioskQrHolder');
+        if (holder1) holder1.innerHTML = demoSvg;
+        if (holder2) holder2.innerHTML = demoSvg;
       }
     }
 
@@ -1055,17 +1062,60 @@
         }
       }
 
-      badge.className = 'status-pill pill-amber';
-      badge.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b"></span> C++ Connecting...';
+      badge.className = 'status-pill pill-blue';
+      badge.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2563eb"></span> Standalone Preview Mode';
+      if (!systemState) {
+        systemState = {
+          totalWaiting: 3,
+          availableCounters: 2,
+          busyCounters: 1,
+          pausedCounters: 1,
+          totalCounters: 4,
+          gracePeriodMinutes: 5,
+          autoWorkloadBalancing: true,
+          overallAvgServiceDurationMinutes: 5.0,
+          overallEstimatedWaitMinutes: 4.0,
+          qrCodeTargetUrl: 'http://172.17.134.16:3000/web_gui/index.html?tab=studentKiosk',
+          services: [
+            { id: 'ADM', name: 'Admission & Registration', description: 'Document verification, branch allocation', color: '#2563eb', currentAvgDurationMinutes: 8.0 },
+            { id: 'FEE', name: 'Fees & Accounts', description: 'Tuition deposit, scholarship receipt', color: '#059669', currentAvgDurationMinutes: 4.0 },
+            { id: 'EXM', name: 'Examination & Results', description: 'Hall tickets, revaluation queries', color: '#d97706', currentAvgDurationMinutes: 6.0 },
+            { id: 'CRT', name: 'Transcripts & Certificates', description: 'Leaving certificates, bona fide', color: '#7c3aed', currentAvgDurationMinutes: 5.0 },
+            { id: 'GEN', name: 'General Enquiry', description: 'Help desk, campus directions, enquiry', color: '#0891b2', currentAvgDurationMinutes: 3.0 }
+          ],
+          counters: [
+            { id: 1, name: 'Counter 1 - Admission & Certs', operatorName: 'Prof. R. Sharma', status: 'SERVING', hasActiveToken: true, projectedWorkloadMinutes: 8.0, elapsedMinutes: 2.1, isGraceExpired: false, totalServedCount: 12, totalNoShowCount: 1, totalCancelledCount: 0, supportedServices: ['ADM', 'CRT', 'GEN'], currentToken: { id: 101, formattedId: 'ADM-101', studentName: 'Aarav Sharma', studentId: 'SE-2026-012', serviceName: 'Admission & Registration' } },
+            { id: 2, name: 'Counter 2 - Cashier & Fees', operatorName: 'Mrs. S. Deshmukh', status: 'AVAILABLE', hasActiveToken: false, projectedWorkloadMinutes: 0.0, elapsedMinutes: 0.0, isGraceExpired: false, totalServedCount: 18, totalNoShowCount: 0, totalCancelledCount: 1, supportedServices: ['FEE', 'GEN'], currentToken: null },
+            { id: 3, name: 'Counter 3 - Examination Wing', operatorName: 'Mr. A. Patil', status: 'PAUSED', hasActiveToken: false, projectedWorkloadMinutes: 0.0, elapsedMinutes: 0.0, isGraceExpired: false, totalServedCount: 9, totalNoShowCount: 0, totalCancelledCount: 0, supportedServices: ['EXM', 'CRT', 'GEN'], currentToken: null },
+            { id: 4, name: 'Counter 4 - Multi-Service Express', operatorName: 'Mr. V. Khan', status: 'AVAILABLE', hasActiveToken: false, projectedWorkloadMinutes: 0.0, elapsedMinutes: 0.0, isGraceExpired: false, totalServedCount: 22, totalNoShowCount: 2, totalCancelledCount: 0, supportedServices: ['ADM', 'FEE', 'EXM', 'CRT', 'GEN'], currentToken: null }
+          ],
+          queues: {
+            'ADM': [{ id: 103, formattedId: 'ADM-103', studentName: 'Priya Patel', studentId: 'TE-2025-088', arrivalTimeString: '10:30 AM', priority: 0 }],
+            'FEE': [{ id: 104, formattedId: 'FEE-104', studentName: 'Sneha Kulkarni', studentId: 'SE-2026-031', arrivalTimeString: '10:32 AM', priority: 0 }],
+            'EXM': [{ id: 105, formattedId: 'EXM-105', studentName: 'Kunal Bansal', studentId: 'FE-2027-104', arrivalTimeString: '10:35 AM', priority: 1 }],
+            'CRT': [],
+            'GEN': []
+          }
+        };
+      }
+      renderAll();
       if (showNotification) {
-        showAlert('C++ backend not running locally on port 3000. Start smart_queue.exe or run.bat to activate native C++ engine.', 'warning');
+        showAlert('C++ backend not running locally on port 3000. Start smart_queue.exe or run.bat to activate native C++ engine.', 'info');
       }
     }
 
     async function fetchHistory() {
       const data = await apiRequest('/api/history');
-      if (!data) return;
-      rawHistoryData = data;
+      if (data) {
+        rawHistoryData = data;
+      } else if (!isConnectedToCpp && rawHistoryData.length === 0) {
+        rawHistoryData = [
+          { formattedId: 'ADM-101', studentName: 'Aarav Sharma', studentId: 'SE-2026-012', serviceName: 'Admission & Registration', status: 'COMPLETED', counterName: 'Counter 1', arrivalTimeString: '10:05 AM', finishTimeString: '10:14 AM', waitDurationMinutes: 3, serviceDurationMinutes: 6, notes: 'Eligible with original documents' },
+          { formattedId: 'FEE-098', studentName: 'Rohan Joshi', studentId: 'BE-2024-009', serviceName: 'Fees & Accounts', status: 'COMPLETED', counterName: 'Counter 2', arrivalTimeString: '10:10 AM', finishTimeString: '10:15 AM', waitDurationMinutes: 2, serviceDurationMinutes: 3, notes: 'Semester fees receipt stamped' },
+          { formattedId: 'EXM-095', studentName: 'Ananya Deshmukh', studentId: 'TE-2025-067', serviceName: 'Examination & Results', status: 'NOSHOW', counterName: 'Counter 3', arrivalTimeString: '10:12 AM', finishTimeString: '10:20 AM', waitDurationMinutes: 5, serviceDurationMinutes: 0, notes: 'No response after 5 mins grace' },
+          { formattedId: 'CRT-091', studentName: 'Siddharth Rao', studentId: 'BE-2024-031', serviceName: 'Transcripts & Certificates', status: 'CANCELLED', counterName: 'Counter 1', arrivalTimeString: '10:15 AM', finishTimeString: '10:18 AM', waitDurationMinutes: 3, serviceDurationMinutes: 0, notes: 'Student cancelled application' }
+        ];
+      }
       filterHistoryTable();
     }
 
@@ -1114,11 +1164,17 @@
 
     async function fetchReports() {
       const data = await apiRequest('/api/reports');
-      if (!data) return;
-      document.getElementById('reportCompleted').innerText = data.totalCompleted;
-      document.getElementById('reportCancelled').innerText = data.totalCancelled;
-      document.getElementById('reportNoShow').innerText = data.totalNoShow;
-      document.getElementById('reportTotalProcessed').innerText = data.totalProcessed;
+      if (data) {
+        document.getElementById('reportCompleted').innerText = data.totalCompleted;
+        document.getElementById('reportCancelled').innerText = data.totalCancelled;
+        document.getElementById('reportNoShow').innerText = data.totalNoShow;
+        document.getElementById('reportTotalProcessed').innerText = data.totalProcessed;
+      } else if (!isConnectedToCpp) {
+        document.getElementById('reportCompleted').innerText = '14';
+        document.getElementById('reportCancelled').innerText = '2';
+        document.getElementById('reportNoShow').innerText = '1';
+        document.getElementById('reportTotalProcessed').innerText = '17';
+      }
     }
 
     // =========================================================================
