@@ -1,427 +1,288 @@
-# Smart Queue and Waiting-Time Management System
-## Master College Project Guide: Full Code Explanation & Viva Questions
+# Smart Queue & Waiting-Time Management System (Genuine C++ Core)
+## Complete Project Guide, Code Walkthrough & Examiner Viva Voce Preparation
 
-> **Academic Year:** Second Year Computer Engineering (SE Computer)  
-> **Course:** Data Structures & Object-Oriented Programming (OOP) in C++  
+> **Course:** Second Year Computer Engineering (SE Computer)  
+> **Topic:** Data Structures & Object-Oriented Programming (OOP) in C++  
+> **Key Architecture:** 100% Genuine C++ Core Backend with Native Winsock HTTP/JSON REST API & Clean Web Client  
 > **Live Web Demo:** [https://smart-queue-and-waiting-time-manage.vercel.app/web_gui/index.html](https://smart-queue-and-waiting-time-manage.vercel.app/web_gui/index.html)  
 > **GitHub Repository:** [https://github.com/Abhijeetkoli98/SMART-QUEUE-AND-WAITING-TIME-MANAGEMENT-SYSTEM](https://github.com/Abhijeetkoli98/SMART-QUEUE-AND-WAITING-TIME-MANAGEMENT-SYSTEM)  
 
 ---
 
 # TABLE OF CONTENTS
-1. [Everything We Used in This Project (Tech Stack & Architecture)](#part-1-everything-we-used-in-this-project)
-2. [Detailed Code Explanation (File-by-File & Line-by-Line)](#part-2-detailed-code-explanation)
-   - [A. Token Class (`Token.h` & `Token.cpp`)](#a-token-class)
-   - [B. Dynamic Linked-List Queue (`Queue.h` & `Queue.cpp`)](#b-dynamic-linked-list-queue)
-   - [C. Queue Manager & Persistence (`QueueManager.h` & `QueueManager.cpp`)](#c-queuemanager-class)
-   - [D. Interactive Console Interface (`main.cpp`)](#d-console-interface-maincpp)
-   - [E. Web Dashboard & Server (`server.js` & `index.html`)](#e-web-dashboard--server)
-3. [The Mathematical Waiting-Time Formula](#part-3-mathematical-waiting-time-formula)
-4. [What Interviewers Will Ask & What You Should Reply (Viva Q&A)](#part-4-viva-voce-interview-questions--answers)
-5. [2-Minute Project Demonstration Speech Script](#part-5-two-minute-demonstration-script)
+1. [Executive Summary & Core Principle: Strictly C++](#1-executive-summary--core-principle-strictly-c)
+2. [Detailed Breakdown of the 5 Core Features](#2-detailed-breakdown-of-the-5-core-features)
+   - [Feature A: Multiple Service Queues](#feature-a-multiple-service-queues)
+   - [Feature B: Multiple Counters Management](#feature-b-multiple-counters-management)
+   - [Feature C: Dynamic Waiting-Time Estimation](#feature-c-dynamic-waiting-time-estimation)
+   - [Feature D: No-Show & Cancellation Management](#feature-d-no-show--cancellation-management)
+   - [Feature E: Intelligent Workload Balancing](#feature-e-intelligent-workload-balancing)
+3. [Deep-Dive Code Walkthrough (File-by-File & Line-by-Line)](#3-deep-dive-code-walkthrough)
+   - [`Token.h` & `Token.cpp`](#a-token-class)
+   - [`ServiceType.h`](#b-servicetype-class)
+   - [`ServiceQueue.h` & `ServiceQueue.cpp` (Dynamic Linked List FIFO Queue)](#c-servicequeue-class)
+   - [`Counter.h` & `Counter.cpp`](#d-counter-class)
+   - [`QueueEngine.h` & `QueueEngine.cpp` (Central Brain)](#e-queueengine-class)
+   - [`HttpServer.h` & `HttpServer.cpp` (Native Winsock HTTP Server)](#f-httpserver-class)
+   - [`main.cpp` (Console CLI & Server Host)](#g-maincpp)
+   - [`web_gui/index.html` (Thin Web UI Client)](#h-web-gui)
+4. [Time and Space Complexity Analysis](#4-time-and-space-complexity-analysis)
+5. [What Interviewers Will Ask & What You Should Reply (Viva Q&A)](#5-what-interviewers-will-ask--what-you-should-reply)
+6. [2-Minute Live Demonstration Speaking Script](#6-2-minute-live-demonstration-speaking-script)
 
 ---
 
-# PART 1: EVERYTHING WE USED IN THIS PROJECT
+# 1. EXECUTIVE SUMMARY & CORE PRINCIPLE: STRICTLY C++
 
-### 1. Programming Languages & Tools
-- **C++ (C++11 Standard):** Used for the core desktop application engine. Provides high execution speed and direct pointer memory management.
-- **MinGW GCC Compiler (`g++`):** Compiles the C++ source files into a standalone native Windows executable (`smart_queue.exe`).
-- **HTML5, CSS3, & Modern JavaScript:** Used to build the responsive visual web dashboard.
-- **Node.js (`http` module):** Powers `server.js` to host the web dashboard locally at `http://localhost:3000` and bridges C++ data files to the web via JSON.
-- **Git & GitHub:** Version control and source code repository hosting.
-- **Vercel:** Cloud platform used for live deployment.
+This college project implements a complete, enterprise-grade **Smart Queue & Waiting-Time Management System**.
 
----
-
-### 2. Data Structure Used: Custom Singly Linked-List Queue
-Instead of using a simple array or standard library queue, we built a **Custom Dynamic Linked-List Queue** from scratch using pointers:
-
-```
-[frontNode]                                           [rearNode]
-     │                                                     │
-     ▼                                                     ▼
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│ Token: T-101 │ ──> │ Token: T-102 │ ──> │ Token: T-103 │ ──> NULL
-└──────────────┘     └──────────────┘     └──────────────┘
- (Served next)                             (Just arrived)
-```
-
-#### Why did we choose a Linked List over an Array?
-1. **Dynamic Size (No Overflow):** Arrays have a fixed size (e.g. `100`). If 101 customers arrive, the array overflows. A linked list allocates nodes on-demand using `new`.
-2. **$O(1)$ Time Complexity for Enqueue & Dequeue:**
-   - **Enqueue (Joining line):** Adding a person at `rearNode` takes constant time $O(1)$.
-   - **Dequeue (Calling next):** Removing the person at `frontNode` takes constant time $O(1)$.
-3. **No Shifting Overhead:** In an array, removing the first item requires shifting all remaining items to the left in $O(n)$ time. In a linked list, we simply advance the pointer: `frontNode = frontNode->next`.
-
-#### Complexity Table
-| Operation | Function Name | Linked List Queue | Fixed Array Queue |
-|:---|:---|:---:|:---:|
-| Add Person | `enqueue()` | **$O(1)$ Constant** | $O(1)$ (Until full) |
-| Call Next | `dequeue()` | **$O(1)$ Constant** | $O(n)$ (Shifting required) |
-| Peek Front | `peek()` | **$O(1)$ Constant** | $O(1)$ |
-| Search Token | `findPosition()` | **$O(n)$ Linear** | $O(n)$ Linear |
+### ⚠️ Strict Architectural Rule:
+- **100% of the core logic, state management, queue operations, workload balancing algorithms, calculations, and data persistence are implemented in C++.**
+- The frontend (HTML5/CSS3/JavaScript) contains **zero business logic**. It functions strictly as a presentation layer that sends asynchronous HTTP JSON requests (`fetch`) to the native C++ backend running on port `8080`.
+- The C++ backend hosts a genuine native HTTP REST server built with Windows Winsock2 (`ws2_32`). It directly parses HTTP requests and returns JSON without any third-party framework or Node.js runtime requirement.
 
 ---
 
-### 3. Object-Oriented Programming (OOP) Concepts Applied
-1. **Encapsulation:** Variables like `tokenId`, `customerName`, and pointers like `frontNode` are `private`. They cannot be tampered with directly and are accessed through controlled public methods.
-2. **Classes and Objects:**
-   - `Token`: Represents the person/token entity.
-   - `Queue`: Manages the dynamic linked nodes and FIFO logic.
-   - `QueueManager`: Handles business logic, file I/O, and wait-time estimation.
-3. **Constructors and Destructors (RAII):**
-   - Constructors initialize default states.
-   - The `Queue` destructor (`~Queue()`) traverses all allocated nodes and frees them using `delete`, preventing memory leaks.
-4. **Separation of Concerns:** Clean file separation where UI (`main.cpp`), data structure (`Queue`), entity (`Token`), and business operations (`QueueManager`) are independent.
+# 2. DETAILED BREAKDOWN OF THE 5 CORE FEATURES
+
+### Feature A: Multiple Service Queues
+Instead of mixing all campus visitors into a single chaotic line, the system provides dedicated FIFO queues for each service:
+1. **`ADM` — Admission & Registration:** Document verification, branch allocation, eligibility certificates.
+2. **`FEE` — Fees & Financial Accounts:** Tuition deposits, examination fees, scholarship concessions.
+3. **`EXM` — Examination & Results:** Hall tickets, revaluation forms, marksheet queries.
+4. **`CRT` — Transcripts & Certificates:** Bona fide certificates, leaving certificates, official transcripts.
+
+Each service maintains its own **Custom Singly Linked-List FIFO Queue**. Tokens have distinct prefixes (e.g. `ADM-101`, `FEE-102`, `EXM-103`, `CRT-104`).
 
 ---
 
-### 4. File Storage & Persistence
-We use C++ file streams (`<fstream>`):
-1. **`data/token_config.txt`:** Saves the next Token ID (e.g., `105`) and the average service time (e.g., `5` mins). When the app restarts, token numbers continue without resetting.
-2. **`data/active_queue.txt`:** Saves unserved active tokens. If the system is rebooted, active waiting customers are restored.
-3. **`data/completed_records.csv`:** Appends finished visits (Token ID, Name, Service, Arrival, Completion) in standard Comma-Separated Values format that can be opened in Microsoft Excel.
+### Feature B: Multiple Counters Management
+The system supports multiple physical counters operating concurrently:
+- **Counter 1 (Prof. R. Sharma):** Handles `ADM` and `CRT`.
+- **Counter 2 (Mrs. S. Deshmukh):** Handles `FEE`.
+- **Counter 3 (Mr. A. Patil):** Handles `EXM` and `CRT`.
+- **Counter 4 (Mr. V. Khan):** Multi-Service Express Counter handling `ADM`, `FEE`, `EXM`, and `CRT`.
+
+Each counter has an explicit lifecycle state:
+- `AVAILABLE`: Ready to accept the next student.
+- `SERVING`: Currently serving a student (displays token ID, student name, elapsed minutes).
+- `PAUSED`: Operator on temporary break; will not be assigned new tokens.
+- `OFFLINE`: Counter closed.
 
 ---
 
-# PART 2: DETAILED CODE EXPLANATION
+### Feature C: Dynamic Waiting-Time Estimation
+Unlike basic systems that show a static or fake number, our C++ engine calculates waiting time using actual service history and multi-counter throughput:
 
-Here is the exact explanation of every file and function so you can explain any line of code to the examiner.
-
----
-
-## A. Token Class
-
-### File: `src/Token.h`
-```cpp
-class Token {
-private:
-    int tokenId;                // Numeric ID, e.g., 101, 102
-    std::string customerName;   // Name of the visitor
-    std::string serviceType;    // Service (e.g., Doc Verification, Fee Payment)
-    std::string arrivalTime;    // Time string when token was created (e.g., 10:24 PM)
-    std::string status;         // "WAITING", "SERVING", or "COMPLETED"
-```
-- **What to tell examiner:**  
-  *"The `Token` class models each person waiting for service. It holds their ID, name, requested service, arrival time, and current status. All attributes are private to maintain encapsulation."*
-
-### File: `src/Token.cpp`
-```cpp
-std::string Token::getFormattedId() const {
-    std::ostringstream oss;
-    oss << "T-" << std::setw(3) << std::setfill('0') << tokenId;
-    return oss.str();
-}
-```
-- **What this does:** Converts integer `101` into a professional string `"T-101"`. If the number is single-digit like `5`, `std::setw(3)` and `std::setfill('0')` formats it as `"T-005"`.
-
----
-
-## B. Dynamic Linked-List Queue
-
-### File: `src/Queue.h`
-```cpp
-struct Node {
-    Token data;     // The Token object stored in this node
-    Node* next;     // Pointer to the next node in line
-
-    Node(const Token& token) : data(token), next(nullptr) {}
-};
-```
-- **What this does:** Each customer is wrapped inside a `Node`. `next` points to the customer behind them in line. When a node is created, `next` defaults to `nullptr`.
-
-```cpp
-class Queue {
-private:
-    Node* frontNode; // Points to the customer at the head (served next)
-    Node* rearNode;  // Points to the most recently arrived customer (at the back)
-    int count;       // Total number of waiting people
-```
-- **What to tell examiner:**  
-  *"Our Queue maintains two pointers: `frontNode` for removing customers when their turn comes, and `rearNode` for adding new customers. `count` gives us the queue length in $O(1)$ time without traversing."*
-
-### File: `src/Queue.cpp`
-
-#### 1. Enqueue Operation (Adding to Queue)
-```cpp
-void Queue::enqueue(const Token& token) {
-    Node* newNode = new Node(token);
-    if (rearNode == nullptr) {
-        // Queue was empty: both front and rear point to the new node
-        frontNode = rearNode = newNode;
-    } else {
-        // Link the current rear node to the new node, then advance rear
-        rearNode->next = newNode;
-        rearNode = newNode;
-    }
-    count++;
-}
-```
-- **Line-by-line explanation:**
-  1. `new Node(token)`: Allocates dynamic heap memory for the new visitor.
-  2. If `rearNode == nullptr`, the queue was empty, so both `frontNode` and `rearNode` point to this first node.
-  3. Otherwise, `rearNode->next = newNode` links the new person behind the current last person, and `rearNode = newNode` updates the rear pointer.
-  4. Takes **$O(1)$ constant time** because no loops are involved.
-
-#### 2. Dequeue Operation (Calling Next Person)
-```cpp
-bool Queue::dequeue(Token& outToken) {
-    if (isEmpty()) return false;
-
-    Node* temp = frontNode;        // 1. Save pointer to front node
-    outToken = temp->data;         // 2. Copy the token data to output
-
-    frontNode = frontNode->next;   // 3. Advance front to the next person
-    if (frontNode == nullptr) {    // 4. If queue is now empty, reset rear
-        rearNode = nullptr;
-    }
-
-    delete temp;                   // 5. Free memory of removed node
-    count--;
-    return true;
-}
-```
-- **Line-by-line explanation:**
-  1. Checks if the queue is empty. If empty, returns `false` safely.
-  2. Points temporary pointer `temp` to `frontNode`.
-  3. Advances `frontNode = frontNode->next`.
-  4. Calls `delete temp` to free the allocated heap memory so there is **no memory leak**.
-  5. Takes **$O(1)$ constant time**.
-
-#### 3. Searching Position
-```cpp
-int Queue::findPosition(int tokenId, Token& outFoundToken) const {
-    Node* current = frontNode;
-    int position = 1;
-
-    while (current != nullptr) {
-        if (current->data.getId() == tokenId) {
-            outFoundToken = current->data;
-            return position; // 1-based position in queue
-        }
-        current = current->next;
-        position++;
-    }
-    return -1; // Not found
-}
-```
-- **Explanation:** Traverses from `frontNode` to the end. Position `1` means the person is next in line. Takes $O(n)$ time in the worst case.
-
-#### 4. Destructor (Memory Cleanup)
-```cpp
-Queue::~Queue() {
-    clear();
-}
-
-void Queue::clear() {
-    while (frontNode != nullptr) {
-        Node* temp = frontNode;
-        frontNode = frontNode->next;
-        delete temp; // Free every node
-    }
-    rearNode = nullptr;
-    count = 0;
-}
-```
-- **What to tell examiner:**  
-  *"When the `Queue` object goes out of scope, the destructor automatically loops through any remaining nodes and calls `delete` to release heap memory back to the operating system."*
-
----
-
-## C. QueueManager Class
-
-### File: `src/QueueManager.h` & `src/QueueManager.cpp`
-`QueueManager` coordinates the entire application.
-
-#### Key Functions:
-1. `generateToken(name, service)`:
-   - Gets the current system timestamp (`07:30 PM`).
-   - Creates a new `Token` with `nextTokenId`.
-   - Calls `waitingQueue.enqueue(newToken)`.
-   - Increments `nextTokenId++`.
-   - Calls `saveStateToFile()` and `saveActiveQueueToFile()`.
-
-2. `callNextPerson(outToken)`:
-   - Checks if the queue is empty.
-   - Dequeues the front person into `currentlyServing`.
-   - Sets `isServing = true`.
-   - Updates `active_queue.txt`.
-
-3. `completeCurrentService(outCompletedToken)`:
-   - Sets status to `"COMPLETED"`.
-   - Opens `data/completed_records.csv` in append mode (`std::ios::app`).
-   - Writes: `Token ID, Name, Service, Arrival Time, Completion Time, Status`.
-   - Sets `isServing = false`.
-
-4. `calculateWaitTime(position)`:
-   ```cpp
-   int peopleAhead = position - 1;
-   int wait = peopleAhead * avgServiceTimeMinutes;
-   if (isServing) {
-       wait += avgServiceTimeMinutes;
-   }
-   return wait;
-   ```
-
----
-
-## D. Console Interface (`main.cpp`)
-
-- **Input Sanitization:** Uses `getIntInput()` with `std::cin.fail()` checks:
-  ```cpp
-  if (std::cin >> value) {
-      return value;
-  } else {
-      std::cin.clear(); // Clear error state
-      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid characters
-  }
-  ```
-  If a user accidentally types `"abc"`, the program will **never crash or enter an infinite loop**.
-
----
-
-## E. Web Dashboard & Server
-
-- **`server.js`:** Written in Node.js. Serves static files and provides the `/api/data` endpoint, which reads `data/token_config.txt`, `data/active_queue.txt`, and `data/completed_records.csv` and returns them as a JSON object.
-- **`web_gui/index.html`:** Modern dashboard that provides:
-  - Responsive metric cards (Currently Serving, Next Token, Total Waiting, Avg Service Time).
-  - Speech synthesis (`window.speechSynthesis`) that reads out called token numbers aloud.
-  - Interactive modals for project information and search.
-
----
-
-# PART 3: MATHEMATICAL WAITING-TIME FORMULA
-
-### The Formula:
-$$\text{Estimated Wait Time (mins)} = (N_{\text{ahead}} \times T_{\text{avg}}) + (C_{\text{busy}} \times T_{\text{avg}})$$
+$$\text{Estimated Wait Time} = \max\left(1, \left\lceil \frac{(P - 1) \times T_{\text{avg}}(S)}{N_{\text{active}}(S)} + \frac{T_{\text{remaining}}}{N_{\text{active}}(S)} \right\rceil\right)$$
 
 Where:
-- $P$ = Token's 1-based position in queue ($1$ = next in line).
-- $N_{\text{ahead}} = P - 1$ = Number of people waiting ahead.
-- $T_{\text{avg}}$ = Average service time per customer (configurable, default = 5 mins).
-- $C_{\text{busy}}$ = 1 if someone is currently at the counter, or 0 if the counter is idle.
-
-### Practical Example to Give the Examiner:
-> *"Suppose Rahul has token `T-104` and is at **Position #4** in line.*  
-> *Number of people ahead of him = $4 - 1 = 3$ people.*  
-> *If each service takes an average of **5 minutes**, and someone is currently at the counter:*  
-> $$\text{Wait Time} = (3 \times 5) + (1 \times 5) = 20 \text{ minutes}$$  
-> *The system will tell Rahul: **'Queue Position: #4 | Est. Wait: ~20 minutes'**."*
+- $P$ = Student's 1-based position in queue $S$.
+- $T_{\text{avg}}(S)$ = **Dynamic Exponential Moving Average (EMA)** of service $S$:
+  $$T_{\text{new}} = (0.30 \times T_{\text{actual}}) + (0.70 \times T_{\text{prev}})$$
+  When a counter finishes a transaction, the actual duration updates this moving average in C++.
+- $N_{\text{active}}(S)$ = Number of online counters currently eligible to handle service $S$.
+- $T_{\text{remaining}}$ = Sum of remaining service time of currently busy counters handling service $S$.
 
 ---
 
-# PART 4: VIVA VOCE INTERVIEW QUESTIONS & ANSWERS
+### Feature D: No-Show & Cancellation Management
+- **Grace Period (Configurable, default 5 mins):** When a token is called to a counter, a timer records the call timestamp. If the student does not arrive within the grace period, the counter flags **[Grace Expired]**, allowing the operator to declare a **No-Show**.
+- **No Queue Blocking:** When marked No-Show or Cancelled, the token is freed immediately in C++, allowing the counter to dispatch the next student without delay.
+- **Audit Logging:** Every no-show or cancellation logs the timestamp, reason, and operator name into `data/completed_records.csv` and memory.
 
-Here are the questions examiners typically ask second-year students, along with simple answers:
+---
 
-### Q1: What is the main objective of your project?
+### Feature E: Intelligent Workload Balancing
+When an operator calls for the next student:
+1. C++ inspects all service queues supported by that counter.
+2. It prioritizes **Priority tokens** (special needs, faculty referral).
+3. Among equal priorities, it applies **Earliest Arrival Time (strict FIFO fairness across services)**.
+4. If multiple counters are available, the token routes to the counter with the **lowest projected workload**:
+   $$\text{Workload}(C) = T_{\text{elapsed\_rem}} + \sum_{s \in \text{Supported}} \frac{\text{QueueCount}(s) \times T_{\text{avg}}(s)}{\text{SharingCounters}(s)}$$
+5. **Manual Override:** Operators can explicitly summon any specific Token ID (e.g. for urgent queries), which is recorded with `[Manual Override]` in the audit trail.
+
+---
+
+# 3. DEEP-DIVE CODE WALKTHROUGH
+
+Here is the exact explanation of how every C++ file works:
+
+### A. `Token` Class (`src/Token.h` & `src/Token.cpp`)
+- **Purpose:** Represents the visitor entity.
+- **Key Members:**
+  - `id`: Unique integer (101, 102...)
+  - `serviceId`: "ADM", "FEE", "EXM", "CRT"
+  - `studentName`, `studentId`, `priority` (0 or 1)
+  - `status`: Enum (`WAITING`, `CALLED`, `SERVING`, `COMPLETED`, `CANCELLED`, `NOSHOW`)
+  - `arrivalTime`, `callTime`, `startTime`, `finishTime` (`std::time_t`)
+  - `assignedCounterId`, `counterName`, `notes`
+- **Method `getFormattedId()`:** Formats integer `101` as `"ADM-101"` using `std::ostringstream`.
+- **Method `toJson()`:** Serializes the token attributes directly into JSON format for the web dashboard.
+
+---
+
+### B. `ServiceType` Class (`src/ServiceType.h`)
+- **Purpose:** Encapsulates service definitions and dynamic speed metrics.
+- **Key Method `recordCompletedService(double actualMinutes)`:**
+  Implements the Exponential Moving Average:
+  `currentAvgDurationMinutes = (0.30 * actualMinutes) + (0.70 * currentAvgDurationMinutes)`.
+  This allows wait estimates to adapt dynamically if transactions are moving faster or slower today.
+
+---
+
+### C. `ServiceQueue` Class (`src/ServiceQueue.h` & `src/ServiceQueue.cpp`)
+- **Purpose:** Implements a custom **Singly Linked-List FIFO Queue**.
+- **Structure:**
+  ```cpp
+  struct QueueNode {
+      Token data;
+      QueueNode* next;
+      QueueNode(const Token& t) : data(t), next(nullptr) {}
+  };
+  ```
+- **Method `enqueue(Token)`:**
+  Creates a new node using `new QueueNode(token)`. If `rearNode == nullptr`, sets `frontNode = rearNode = newNode`. Otherwise, `rearNode->next = newNode; rearNode = newNode;`. Takes **$O(1)$ constant time**.
+- **Method `dequeue(Token& outToken)`:**
+  Saves `frontNode`, copies data, advances `frontNode = frontNode->next`, and calls `delete temp` to free heap memory. Takes **$O(1)$ constant time**.
+- **Method `removeToken(int tokenId, Token& out)`:**
+  Traverses the linked list to find and remove a specific token (used for voluntary student cancellation or operator manual override). Takes $O(n)$ time.
+- **Destructor `~ServiceQueue()`:**
+  Calls `clear()`, which iterates through all remaining nodes and calls `delete` to prevent memory leaks.
+
+---
+
+### D. `Counter` Class (`src/Counter.h` & `src/Counter.cpp`)
+- **Purpose:** Represents a service counter desk.
+- **Key Members:**
+  - `id`, `name`, `operatorName`, `supportedServiceIds`
+  - `status`: Enum (`COUNTER_AVAILABLE`, `COUNTER_SERVING`, `COUNTER_PAUSED`, `COUNTER_OFFLINE`)
+  - `currentToken`, `hasActiveToken`, `callTimestamp`
+  - Statistics: `totalServedCount`, `totalNoShowCount`, `totalCancelledCount`
+- **Method `assignToken(Token)`:** Moves counter to `COUNTER_SERVING`, logs start time.
+- **Method `completeCurrent(Token&)`:** Records finish time, increments `totalServedCount`, frees counter to `COUNTER_AVAILABLE`.
+- **Method `markNoShow(Token&, reason)`:** Marks token `STATUS_NOSHOW`, frees counter to `COUNTER_AVAILABLE`.
+
+---
+
+### E. `QueueEngine` Class (`src/QueueEngine.h` & `src/QueueEngine.cpp`)
+- **Purpose:** Central coordinator and brain of the system.
+- **Key Collections:**
+  - `std::map<std::string, ServiceType> services`: Map of all 4 services.
+  - `std::map<std::string, ServiceQueue> queues`: Map of FIFO queues per service.
+  - `std::vector<Counter> counters`: The 4 active service counters.
+  - `std::vector<Token> auditHistory`: Persistent transaction logs.
+- **Method `callNextForCounter(int counterId, Token& out)`:**
+  The Intelligent Workload Balancing algorithm:
+  - Scans all queues supported by this counter.
+  - Looks at `frontNode` of each candidate queue.
+  - Prioritizes `priority > 0` tokens first.
+  - Among equal priorities, selects the token with the earliest `arrivalTime`.
+  - Atomically dequeues and assigns to counter.
+- **Method `saveState()` & `loadState()`:**
+  Reads/writes `data/token_config.txt`, `data/active_queue.txt`, and exports `data/completed_records.csv` to ensure persistence across computer reboots.
+
+---
+
+### F. `HttpServer` Class (`src/HttpServer.h` & `src/HttpServer.cpp`)
+- **Purpose:** Native Windows Winsock2 HTTP REST API Server.
+- **How it Works:**
+  - Initializes Winsock (`WSAStartup`).
+  - Binds to port `8080` and listens for incoming TCP client connections.
+  - Spawns a background worker thread via Windows API `CreateThread`.
+  - Protects `QueueEngine` method calls with a Windows `CRITICAL_SECTION` lock (`EnterCriticalSection` / `LeaveCriticalSection`) to ensure thread safety.
+  - Handles HTTP GET and POST requests:
+    - `/api/status` &rarr; Full system state JSON.
+    - `/api/token/generate` &rarr; Issues token.
+    - `/api/counter/call` &rarr; Dispatches student to counter.
+    - `/api/counter/complete` &rarr; Marks service complete.
+    - `/api/counter/noshow` &rarr; Marks student as no-show.
+    - `/api/counter/status` &rarr; Pauses or activates counter.
+    - `/api/token/search` &rarr; Queries position and wait time.
+  - Serves static assets (`index.html`, `favicon.svg`, `404.html`) with proper MIME types.
+
+---
+
+### G. `main.cpp`
+- **Purpose:** Entry point for the executable.
+- Starts the `HttpServer` on port `8080`.
+- Provides an interactive, menu-driven Console CLI so examiners can evaluate the program either via terminal or via web browser.
+
+---
+
+# 4. TIME AND SPACE COMPLEXITY ANALYSIS
+
+| Operation | C++ Function | Time Complexity | Space Complexity | Explanation |
+|:---|:---|:---:|:---:|:---|
+| **Add Student to Queue** | `ServiceQueue::enqueue` | **$O(1)$ Constant** | $O(1)$ | Directly links node at `rearNode->next` |
+| **Call Next Student** | `ServiceQueue::dequeue` | **$O(1)$ Constant** | $O(1)$ | Directly advances `frontNode = frontNode->next` |
+| **Inspect Front Student** | `ServiceQueue::peek` | **$O(1)$ Constant** | $O(1)$ | Reads `frontNode->data` |
+| **Search Student in Line** | `ServiceQueue::findPosition` | **$O(n)$ Linear** | $O(1)$ | Traverses linked list of size $n$ |
+| **Cancel Token in Queue** | `ServiceQueue::removeToken` | **$O(n)$ Linear** | $O(1)$ | Unlinks node and calls `delete` |
+| **Workload Balancing** | `callNextForCounter` | **$O(S)$** where $S \le 4$ | $O(1)$ | Peeks front of supported service queues |
+| **Wait Time Estimation** | `calculateEstimatedWait` | **$O(C)$** where $C \le 4$ | $O(1)$ | Scans online counters to sum capacity |
+
+---
+
+# 5. WHAT INTERVIEWERS WILL ASK & WHAT YOU SHOULD REPLY
+
+### Q1: What is the biggest upgrade in your system compared to a basic queue?
 **Your Reply:**
-> *"The objective of our project is to eliminate physical lines at places like college offices, clinics, and banks. Instead of standing without knowing when their turn will come, visitors receive a unique token number, are placed in a First-In, First-Out queue, and can see their exact position and estimated waiting time."*
+> *"Sir/Ma'am, traditional queue systems use a single queue with static wait times. Our system introduces three major upgrades:*  
+> *1. **Multiple Service Queues:** Separate FIFO linked-list queues for Admission, Fees, Examination, and Certificates.*  
+> *2. **Dynamic Moving-Average Estimation:** Instead of hardcoded guesses, our C++ backend recalculates wait times dynamically using exponential moving averages from actual service durations.*  
+> *3. **Intelligent Workload Balancing:** Multi-service counters automatically pull the longest-waiting eligible student with priority handling, and no-shows are managed with configurable grace periods."*
 
 ---
 
-### Q2: Why did you choose C++ for this project?
+### Q2: Why did you implement the backend in C++ instead of Node.js or Python?
 **Your Reply:**
-> *"We chose C++ because it gives us direct control over memory using pointers, executes at high speed, and supports Object-Oriented Programming (OOP) concepts like classes, objects, and encapsulation."*
+> *"Because C++ provides deterministic memory management, high execution speed, and direct pointer control. For real-time counter hardware and queue kiosks in banks or colleges, C++ ensures zero garbage-collection pauses. We built our own native Winsock HTTP server directly in C++ to serve JSON endpoints to the dashboard."*
 
 ---
 
-### Q3: What is FIFO and why is it essential here?
+### Q3: Why did you build a custom Linked List instead of an Array or `std::vector`?
 **Your Reply:**
-> *"FIFO stands for **First-In, First-Out**. It means the person who joins the queue first is served first. In a queue management system, FIFO guarantees fairness and prevents line-cutting."*
+> *"An array has a fixed capacity that can overflow, and removing the front item requires shifting all remaining elements to the left in $O(n)$ time. With our Linked List queue, memory is allocated dynamically on demand, and both `enqueue` (at the rear) and `dequeue` (at the front) run in strictly **$O(1)$ constant time**."*
 
 ---
 
-### Q4: Why did you build a Linked-List Queue instead of using an Array?
+### Q4: How does your Workload Balancing algorithm work?
 **Your Reply:**
-> *"In an array, size is fixed at compile time, leading to queue overflow or wasted memory. Also, removing the front element in an array requires shifting all remaining elements in $O(n)$ time. With our Linked List Queue:  
-> 1. Nodes are allocated dynamically on-demand using `new`.  
-> 2. Both `enqueue` (at rear) and `dequeue` (at front) take strictly **$O(1)$ constant time**."*
+> *"When a counter operator clicks 'Call Next', our C++ engine examines all service queues that counter is authorized to handle. It first checks for any Priority tokens. If none exist, it selects the token with the earliest arrival timestamp across all eligible queues, ensuring strict FIFO fairness across multiple desks."*
 
 ---
 
-### Q5: What is the difference between `frontNode` and `rearNode`?
+### Q5: How do you handle students who do not show up when called?
 **Your Reply:**
-> *" `frontNode` points to the customer at the head of the queue who will be served next. `rearNode` points to the customer at the back who just arrived. New tokens are added at `rearNode`, and called tokens are removed from `frontNode`."*
+> *"We implement a configurable Grace Period (default 5 minutes). When a token is called, C++ records the timestamp. If the student fails to arrive within the grace window, the counter flags 'Grace Expired', enabling the operator to mark them as No-Show. The token is immediately unassigned, freeing the counter without holding up the rest of the queue."*
 
 ---
 
-### Q6: What happens to the dynamically allocated memory when someone leaves the queue?
+### Q6: How do you prevent data loss if the computer turns off?
 **Your Reply:**
-> *"In our `dequeue()` function, we assign a temporary pointer to the front node, advance `frontNode` to the next node, and call `delete temp`. This frees the allocated heap memory and prevents memory leaks."*
+> *"We use C++ file streams (`std::ifstream` and `std::ofstream`). Every token generation and state transition writes to `data/token_config.txt`, `data/active_queue.txt`, and `data/completed_records.csv`. When the software restarts, `loadState()` restores the queue order and resumes token numbers seamlessly."*
 
 ---
 
-### Q7: How do you prevent token numbers from restarting from 101 when the software restarts?
-**Your Reply:**
-> *"We persist the state in `data/token_config.txt`. Every time a token is issued, the counter is saved. When the application starts up, `QueueManager` reads this file. If the last token was 104, the next token generated will be 105."*
+# 6. 2-MINUTE LIVE DEMONSTRATION SPEAKING SCRIPT
 
----
+Use this script during your final presentation:
 
-### Q8: What happens if the computer crashes or is accidentally closed? Is the waiting line lost?
-**Your Reply:**
-> *"No, sir/ma'am. We implemented state recovery in `data/active_queue.txt`. Every time someone is enqueued or called, the active queue is serialized to disk. Upon startup, `loadActiveQueueFromFile()` restores the exact queue order."*
-
----
-
-### Q9: How is the estimated waiting time calculated?
-**Your Reply:**
-> *"We use the formula:  
-> `Wait Time = (Queue Position - 1) * Average Service Time`.  
-> If an operator is actively serving someone at the counter, we add 1 service interval to account for the ongoing transaction. The average service duration can also be adjusted by the operator in the menu."*
-
----
-
-### Q10: How did you implement Encapsulation in your project?
-**Your Reply:**
-> *"In `Token` and `Queue`, all internal data attributes—like `tokenId`, `customerName`, `frontNode`, and `rearNode`—are marked `private`. External classes can only access or modify them through public member functions like `getId()`, `enqueue()`, and `dequeue()`."*
-
----
-
-### Q11: What will happen if someone enters invalid text when a number is expected?
-**Your Reply:**
-> *"Our input helper function checks `std::cin.fail()`. If invalid input like letters is entered, it clears the error flag with `std::cin.clear()` and flushes the input buffer with `std::cin.ignore()`, then prompts the user again without crashing."*
-
----
-
-### Q12: Why did you also build a Web Dashboard?
-**Your Reply:**
-> *"The C++ console application is the core backend engine. We created the Web Dashboard to show how modern display monitors in waiting halls can visualize the queue, update counters, and use speech synthesis to announce called tokens aloud to visitors."*
-
----
-
-### Q13: What are the limitations of this project and future scope?
-**Your Reply:**
-> *"Currently, the system models a single service counter with a fixed average service duration. For future scope, we can expand it to support multiple parallel counters (Counter 1, 2, 3), add SMS notifications via Twilio, and use a SQL database for multi-branch sync."*
-
----
-
-# PART 5: TWO-MINUTE DEMONSTRATION SCRIPT
-
-Use this script during your college demonstration:
-
-> *"Good morning respected examiners.*
+> *"Good morning respected examiners and faculty members.*
 >
-> *Today, I am demonstrating our project: the **Smart Queue and Waiting-Time Management System** developed in C++.*
+> *Today, I am demonstrating our college engineering project: the **Smart Queue and Waiting-Time Management System** with a complete **C++ core engine**.*
 >
-> *In busy service centers like banks, hospitals, and college offices, physical queues cause confusion, exhaustion, and disputes. Our software digitizes this process.*
+> *In university administrative buildings and clinics, standing in physical lines causes confusion, fatigue, and line-cutting. Our software completely digitizes this process.*
 >
-> *Here is our application running. At the top of the screen, our dashboard displays the currently serving customer, the next token in line, the total waiting count, and the average service duration.*
+> *(Point to the screen)*  
+> *Here is our application running. The backend is a native C++ executable that operates on port 8080 and hosts this clean dashboard.*
 >
-> *(Demonstrating Option 8)*  
-> *I will select Option 8 to load sample visitors. You can see tokens T-101 through T-104 are generated.*
+> *Our system provides five primary features:*
+> *1. **Multiple Service Queues:** As you can see, we have separate FIFO queues for Admission, Fees, Examination, and Certificates.*
+> *2. **Multiple Service Counters:** We have four counters running with individual operators, supported service specializations, and real-time status transitions.*
+> *3. **Dynamic Wait Time Estimation:** When a student enters their roll number and gets a token, C++ calculates their estimated wait time using actual historical service duration and available counter throughput.*
+> *4. **Intelligent Workload Balancing:** When Counter 1 clicks 'Call Next', C++ dispatches the earliest arrival from its supported queues, triggering an audible voice chime.*
+> *5. **No-Show and Cancellation Management:** If a student does not arrive within the 5-minute grace period, the operator marks them as No-Show, freeing the counter without blocking the queue.*
 >
-> *(Demonstrating Option 2)*  
-> *Selecting Option 2 displays our waiting queue in strict First-In, First-Out (FIFO) order using our custom Singly Linked List Queue.*
->
-> *(Demonstrating Option 5)*  
-> *If visitor T-103 wants to check their wait time, I select Option 5 and enter 103. The system shows they are at Position #3, with 2 people ahead, resulting in an estimated wait of 10 minutes.*
->
-> *(Demonstrating Option 3 & 4)*  
-> *When the operator clicks 'Call Next', Token T-101 moves to the service counter in O(1) time. Once served, selecting Option 4 completes the service and saves the transaction record to `completed_records.csv`.*
->
-> *(Demonstrating Web Dashboard)*  
-> *We have also deployed a live web version on Vercel at `smart-queue-and-waiting-time-manage.vercel.app`, which includes voice announcements for waiting halls.*
->
-> *Thank you. I am ready for questions."*
+> *All transactions are permanently audited to CSV. Thank you, and I am ready for your questions."*

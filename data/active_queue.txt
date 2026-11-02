@@ -1,4 +1,4 @@
-NONE
-WAITING|102|Priya Patel|Fee Payment|10:24 PM
-WAITING|103|Rahul Verma|General Inquiry|10:24 PM
-WAITING|104|Sneha Kulkarni|Fee Payment|10:24 PM
+WAITING|106|ADM|Admission & Registration|Student||0|1793642252
+WAITING|107|ADM|Admission & Registration|Student||0|1793642252
+WAITING|108|ADM|Admission & Registration|Aarav Sharma|SE-2026-001|0|1793642256
+WAITING|110|EXM|Examination & Results|Rahul Verma|BE-2024-099|1|1793642256
