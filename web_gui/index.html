@@ -1382,50 +1382,130 @@
     // EVENT HANDLERS
     // =========================================================================
 
+    // Standalone fallback helpers when C++ is offline
+    let standaloneNextTokenId = 200;
+
+    function recalculateStandaloneStats() {
+      if (!systemState) return;
+      let totalW = 0;
+      let busyC = 0;
+      let availC = 0;
+      let pausedC = 0;
+      if (systemState.queues) {
+        Object.keys(systemState.queues).forEach(k => {
+          totalW += systemState.queues[k].length;
+        });
+      }
+      if (systemState.counters) {
+        systemState.counters.forEach(c => {
+          if (c.status === 'SERVING') busyC++;
+          else if (c.status === 'AVAILABLE') availC++;
+          else if (c.status === 'PAUSED' || c.status === 'OFFLINE') pausedC++;
+        });
+      }
+      systemState.totalWaiting = totalW;
+      systemState.availableCounters = availC;
+      systemState.busyCounters = busyC;
+      systemState.pausedCounters = pausedC;
+      systemState.overallEstimatedWaitMinutes = totalW === 0 ? 0 : Math.ceil((totalW * 5.0) / Math.max(1, availC + busyC));
+      renderAll();
+    }
+
     async function handleGenerateToken(e) {
       e.preventDefault();
       const btn = document.getElementById('btnGenToken');
       btn.disabled = true;
-      btn.innerText = 'Generating in C++ Core...';
+      btn.innerText = 'Processing Token...';
 
       const sId = document.getElementById('kioskService').value;
       const name = document.getElementById('kioskName').value.trim();
       const studentId = document.getElementById('kioskStudentId').value.trim();
       const priority = document.getElementById('kioskPriority').checked ? 1 : 0;
 
-      const res = await apiRequest('/api/token/generate', 'POST', {
-        serviceId: sId,
-        studentName: name,
-        studentId: studentId,
-        priority: priority
-      });
+      if (isConnectedToCpp) {
+        const res = await apiRequest('/api/token/generate', 'POST', {
+          serviceId: sId,
+          studentName: name,
+          studentId: studentId,
+          priority: priority
+        });
 
-      btn.disabled = false;
-      btn.innerText = 'Generate Token (C++ Engine)';
+        btn.disabled = false;
+        btn.innerText = 'Generate Token (C++ Engine)';
 
-      if (res && res.success) {
+        if (res && res.success) {
+          document.getElementById('kioskName').value = '';
+          document.getElementById('kioskStudentId').value = '';
+          document.getElementById('kioskPriority').checked = false;
+
+          const card = document.getElementById('kioskGeneratedCard');
+          card.style.display = 'block';
+          document.getElementById('genTokenNumber').innerText = res.token.formattedId;
+          document.getElementById('genStudentName').innerText = `${res.token.studentName} (${res.token.studentId})`;
+          document.getElementById('genServiceName').innerText = res.token.serviceName;
+
+          const searchRes = await apiRequest('/api/token/search', 'POST', { tokenId: res.token.id });
+          if (searchRes && searchRes.found) {
+            document.getElementById('genQueuePosition').innerText = `#${searchRes.position}`;
+            document.getElementById('genWaitTime').innerText = `~${Math.ceil(searchRes.estimatedWaitMinutes)} min`;
+          }
+
+          showAlert(`Token ${res.token.formattedId} generated successfully! Added to ${res.token.serviceName} queue.`, 'success');
+          fetchSystemStatus();
+        } else {
+          showAlert('Failed to generate token. Backend error.', 'danger');
+        }
+      } else {
+        btn.disabled = false;
+        btn.innerText = 'Generate Token (C++ Engine)';
+
+        const svcNames = {
+          'ADM': 'Admission & Registration',
+          'FEE': 'Fees & Accounts',
+          'EXM': 'Examination & Results',
+          'CRT': 'Transcripts & Certificates',
+          'GEN': 'General Enquiry'
+        };
+        const sName = svcNames[sId] || 'Campus Service';
+        const tId = ++standaloneNextTokenId;
+        const formattedId = `${sId}-${tId}`;
+        const arrivalStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const tokenObj = {
+          id: tId,
+          formattedId: formattedId,
+          serviceId: sId,
+          serviceName: sName,
+          studentName: name,
+          studentId: studentId,
+          priority: priority,
+          arrivalTimeString: arrivalStr,
+          status: 'WAITING'
+        };
+
+        if (!systemState.queues) systemState.queues = {};
+        if (!systemState.queues[sId]) systemState.queues[sId] = [];
+
+        if (priority > 0) {
+          systemState.queues[sId].unshift(tokenObj);
+        } else {
+          systemState.queues[sId].push(tokenObj);
+        }
+
         document.getElementById('kioskName').value = '';
         document.getElementById('kioskStudentId').value = '';
         document.getElementById('kioskPriority').checked = false;
 
-        // Display Token Result Card
         const card = document.getElementById('kioskGeneratedCard');
         card.style.display = 'block';
-        document.getElementById('genTokenNumber').innerText = res.token.formattedId;
-        document.getElementById('genStudentName').innerText = `${res.token.studentName} (${res.token.studentId})`;
-        document.getElementById('genServiceName').innerText = res.token.serviceName;
+        document.getElementById('genTokenNumber').innerText = formattedId;
+        document.getElementById('genStudentName').innerText = `${name} (${studentId})`;
+        document.getElementById('genServiceName').innerText = sName;
+        document.getElementById('genQueuePosition').innerText = `#${systemState.queues[sId].length}`;
+        document.getElementById('genWaitTime').innerText = `~${systemState.queues[sId].length * 4} min`;
 
-        // Query status for wait time
-        const searchRes = await apiRequest('/api/token/search', 'POST', { tokenId: res.token.id });
-        if (searchRes && searchRes.found) {
-          document.getElementById('genQueuePosition').innerText = `#${searchRes.position}`;
-          document.getElementById('genWaitTime').innerText = `~${Math.ceil(searchRes.estimatedWaitMinutes)} min`;
-        }
-
-        showAlert(`Token ${res.token.formattedId} generated successfully! Added to ${res.token.serviceName} queue.`, 'success');
-        fetchSystemStatus();
-      } else {
-        showAlert('Failed to generate token. Backend error.', 'danger');
+        recalculateStandaloneStats();
+        showAlert(`Token ${formattedId} generated successfully! Added to ${sName} queue.`, 'success');
       }
     }
 
@@ -1435,76 +1515,249 @@
       const resBox = document.getElementById('searchResultCard');
       resBox.style.display = 'block';
 
-      const res = await apiRequest('/api/token/search', 'POST', { tokenId: id });
-      if (res && res.found) {
-        const t = res.token;
-        resBox.innerHTML = `
-          <div style="font-size:1.15rem;font-weight:700;color:var(--primary);margin-bottom:0.5rem">
-            Token ${t.formattedId} &bull; ${t.status}
-          </div>
-          <div style="font-size:0.9rem;line-height:1.6">
-            <strong>Student:</strong> ${t.studentName} (${t.studentId})<br>
-            <strong>Service:</strong> ${t.serviceName}<br>
-            <strong>Position:</strong> ${res.position === 0 ? 'Currently serving at counter' : '#' + res.position + ' in waiting line'}<br>
-            <strong>Estimated Wait Time:</strong> ~${Math.ceil(res.estimatedWaitMinutes)} minutes<br>
-            <div style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)">
-              ${res.message}
+      if (isConnectedToCpp) {
+        const res = await apiRequest('/api/token/search', 'POST', { tokenId: id });
+        if (res && res.found) {
+          const t = res.token;
+          resBox.innerHTML = `
+            <div style="font-size:1.15rem;font-weight:700;color:var(--primary);margin-bottom:0.5rem">
+              Token ${t.formattedId} &bull; ${t.status}
             </div>
-          </div>
-        `;
+            <div style="font-size:0.9rem;line-height:1.6">
+              <strong>Student:</strong> ${t.studentName} (${t.studentId})<br>
+              <strong>Service:</strong> ${t.serviceName}<br>
+              <strong>Position:</strong> ${res.position === 0 ? 'Currently serving at counter' : '#' + res.position + ' in waiting line'}<br>
+              <strong>Estimated Wait Time:</strong> ~${Math.ceil(res.estimatedWaitMinutes)} minutes<br>
+              <div style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)">
+                ${res.message}
+              </div>
+            </div>
+          `;
+        } else {
+          resBox.innerHTML = `
+            <div style="color:var(--danger);font-weight:600">
+              Token ID ${id} was not found in active queues or counter stations.
+            </div>
+          `;
+        }
       } else {
-        resBox.innerHTML = `
-          <div style="color:var(--danger);font-weight:600">
-            Token ID ${id} was not found in active queues or counter stations.
-          </div>
-        `;
+        let foundToken = null;
+        let pos = -1;
+        let atCounter = null;
+
+        if (systemState.counters) {
+          systemState.counters.forEach(c => {
+            if (c.hasActiveToken && c.currentToken && (c.currentToken.id === id || c.currentToken.formattedId.includes(String(id)))) {
+              foundToken = c.currentToken;
+              atCounter = c.name;
+            }
+          });
+        }
+
+        if (!foundToken && systemState.queues) {
+          Object.keys(systemState.queues).forEach(sKey => {
+            const list = systemState.queues[sKey];
+            list.forEach((t, idx) => {
+              if (t.id === id || t.formattedId.includes(String(id))) {
+                foundToken = t;
+                pos = idx + 1;
+              }
+            });
+          });
+        }
+
+        if (foundToken) {
+          resBox.innerHTML = `
+            <div style="font-size:1.15rem;font-weight:700;color:var(--primary);margin-bottom:0.5rem">
+              Token ${foundToken.formattedId} &bull; ${atCounter ? 'SERVING' : 'WAITING'}
+            </div>
+            <div style="font-size:0.9rem;line-height:1.6">
+              <strong>Student:</strong> ${foundToken.studentName} (${foundToken.studentId})<br>
+              <strong>Service:</strong> ${foundToken.serviceName || foundToken.serviceId}<br>
+              <strong>Position:</strong> ${atCounter ? `Currently serving at ${atCounter}` : '#' + pos + ' in FIFO queue'}<br>
+              <strong>Estimated Wait Time:</strong> ~${pos > 0 ? pos * 4 : 0} minutes<br>
+            </div>
+          `;
+        } else {
+          resBox.innerHTML = `
+            <div style="color:var(--danger);font-weight:600">
+              Token ID ${id} was not found in active queues or counter stations.
+            </div>
+          `;
+        }
       }
     }
 
     async function callNextToken(counterId) {
-      const res = await apiRequest('/api/counter/call', 'POST', { counterId: counterId });
-      if (res && res.success) {
-        showAlert(`Called Token ${res.calledToken.formattedId} to Counter ${counterId}!`, 'success');
-        playAudioCall(res.calledToken.formattedId, res.calledToken.serviceName, `Counter ${counterId}`);
-        fetchSystemStatus();
+      if (isConnectedToCpp) {
+        const res = await apiRequest('/api/counter/call', 'POST', { counterId: counterId });
+        if (res && res.success) {
+          showAlert(`Called Token ${res.calledToken.formattedId} to Counter ${counterId}!`, 'success');
+          playAudioCall(res.calledToken.formattedId, res.calledToken.serviceName, `Counter ${counterId}`);
+          fetchSystemStatus();
+        } else {
+          showAlert(res ? res.message : 'No eligible students waiting for this counter.', 'info');
+        }
       } else {
-        showAlert(res ? res.message : 'No eligible students waiting for this counter.', 'info');
+        const c = systemState.counters.find(x => x.id === counterId);
+        if (!c) return;
+
+        let foundToken = null;
+        let foundServiceKey = null;
+
+        for (let sKey of c.supportedServices) {
+          if (systemState.queues[sKey] && systemState.queues[sKey].length > 0) {
+            foundToken = systemState.queues[sKey].shift();
+            foundServiceKey = sKey;
+            break;
+          }
+        }
+
+        if (foundToken) {
+          c.hasActiveToken = true;
+          c.status = 'SERVING';
+          c.currentToken = {
+            id: foundToken.id,
+            formattedId: foundToken.formattedId,
+            studentName: foundToken.studentName,
+            studentId: foundToken.studentId,
+            serviceName: foundToken.serviceName || foundServiceKey
+          };
+          c.elapsedMinutes = 0.1;
+          recalculateStandaloneStats();
+          showAlert(`Called Token ${foundToken.formattedId} to ${c.name}!`, 'success');
+          playAudioCall(foundToken.formattedId, foundToken.serviceName || foundServiceKey, c.name);
+        } else {
+          showAlert(`No eligible students currently waiting for ${c.name}.`, 'info');
+        }
       }
     }
 
     async function completeTokenService(counterId) {
-      const res = await apiRequest('/api/counter/complete', 'POST', { counterId: counterId });
-      if (res && res.success) {
-        showAlert(`Service for Token ${res.completedToken.formattedId} marked as COMPLETED! Logged to CSV.`, 'success');
-        fetchSystemStatus();
+      if (isConnectedToCpp) {
+        const res = await apiRequest('/api/counter/complete', 'POST', { counterId: counterId });
+        if (res && res.success) {
+          showAlert(`Service for Token ${res.completedToken.formattedId} marked as COMPLETED! Logged to CSV.`, 'success');
+          fetchSystemStatus();
+        }
+      } else {
+        const c = systemState.counters.find(x => x.id === counterId);
+        if (c && c.hasActiveToken) {
+          const t = c.currentToken;
+          rawHistoryData.unshift({
+            formattedId: t.formattedId,
+            studentName: t.studentName,
+            studentId: t.studentId,
+            serviceName: t.serviceName,
+            status: 'COMPLETED',
+            counterName: c.name,
+            arrivalTimeString: 'Earlier',
+            finishTimeString: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            waitDurationMinutes: 4,
+            serviceDurationMinutes: Math.max(1, Math.round(c.elapsedMinutes || 5)),
+            notes: 'Service successfully finished'
+          });
+          c.hasActiveToken = false;
+          c.status = 'AVAILABLE';
+          c.currentToken = null;
+          c.totalServedCount++;
+          recalculateStandaloneStats();
+          filterHistoryTable();
+          showAlert(`Service for Token ${t.formattedId} marked as COMPLETED!`, 'success');
+        }
       }
     }
 
     async function markTokenNoShow(counterId) {
       const reason = prompt('Enter reason for marking student as No-Show:');
       if (reason === null) return;
-      const res = await apiRequest('/api/counter/noshow', 'POST', { counterId: counterId, reason: reason });
-      if (res && res.success) {
-        showAlert(`Token marked as NO-SHOW at Counter ${counterId}. Counter is now free.`, 'warning');
-        fetchSystemStatus();
+
+      if (isConnectedToCpp) {
+        const res = await apiRequest('/api/counter/noshow', 'POST', { counterId: counterId, reason: reason });
+        if (res && res.success) {
+          showAlert(`Token marked as NO-SHOW at Counter ${counterId}. Counter is now free.`, 'warning');
+          fetchSystemStatus();
+        }
+      } else {
+        const c = systemState.counters.find(x => x.id === counterId);
+        if (c && c.hasActiveToken) {
+          const t = c.currentToken;
+          rawHistoryData.unshift({
+            formattedId: t.formattedId,
+            studentName: t.studentName,
+            studentId: t.studentId,
+            serviceName: t.serviceName,
+            status: 'NOSHOW',
+            counterName: c.name,
+            arrivalTimeString: 'Earlier',
+            finishTimeString: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            waitDurationMinutes: 5,
+            serviceDurationMinutes: 0,
+            notes: reason || 'Student did not arrive'
+          });
+          c.hasActiveToken = false;
+          c.status = 'AVAILABLE';
+          c.currentToken = null;
+          c.totalNoShowCount = (c.totalNoShowCount || 0) + 1;
+          recalculateStandaloneStats();
+          filterHistoryTable();
+          showAlert(`Token ${t.formattedId} marked as NO-SHOW. Counter is now free.`, 'warning');
+        }
       }
     }
 
     async function cancelTokenService(counterId) {
       const reason = prompt('Enter reason for cancellation:');
       if (reason === null) return;
-      const res = await apiRequest('/api/counter/cancel', 'POST', { counterId: counterId, reason: reason });
-      if (res && res.success) {
-        showAlert(`Service cancelled at Counter ${counterId}.`, 'warning');
-        fetchSystemStatus();
+
+      if (isConnectedToCpp) {
+        const res = await apiRequest('/api/counter/cancel', 'POST', { counterId: counterId, reason: reason });
+        if (res && res.success) {
+          showAlert(`Service cancelled at Counter ${counterId}.`, 'warning');
+          fetchSystemStatus();
+        }
+      } else {
+        const c = systemState.counters.find(x => x.id === counterId);
+        if (c && c.hasActiveToken) {
+          const t = c.currentToken;
+          rawHistoryData.unshift({
+            formattedId: t.formattedId,
+            studentName: t.studentName,
+            studentId: t.studentId,
+            serviceName: t.serviceName,
+            status: 'CANCELLED',
+            counterName: c.name,
+            arrivalTimeString: 'Earlier',
+            finishTimeString: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            waitDurationMinutes: 3,
+            serviceDurationMinutes: 0,
+            notes: reason || 'Service cancelled'
+          });
+          c.hasActiveToken = false;
+          c.status = 'AVAILABLE';
+          c.currentToken = null;
+          c.totalCancelledCount = (c.totalCancelledCount || 0) + 1;
+          recalculateStandaloneStats();
+          filterHistoryTable();
+          showAlert(`Service cancelled for Token ${t.formattedId}.`, 'warning');
+        }
       }
     }
 
     async function changeCounterStatus(counterId, status) {
-      const res = await apiRequest('/api/counter/status', 'POST', { counterId: counterId, status: status });
-      if (res && res.success) {
-        showAlert(`Counter ${counterId} status updated to ${status}.`, 'info');
-        fetchSystemStatus();
+      if (isConnectedToCpp) {
+        const res = await apiRequest('/api/counter/status', 'POST', { counterId: counterId, status: status });
+        if (res && res.success) {
+          showAlert(`Counter ${counterId} status updated to ${status}.`, 'info');
+          fetchSystemStatus();
+        }
+      } else {
+        const c = systemState.counters.find(x => x.id === counterId);
+        if (c) {
+          c.status = status;
+          recalculateStandaloneStats();
+          showAlert(`Counter ${counterId} status updated to ${status}.`, 'info');
+        }
       }
     }
 
@@ -1524,30 +1777,81 @@
       const tId = parseInt(document.getElementById('overrideTokenId').value);
       closeModal('overrideModal');
 
-      const res = await apiRequest('/api/counter/override', 'POST', { counterId: cId, tokenId: tId });
-      if (res && res.success) {
-        showAlert(`Manual Override Successful! Token ${res.calledToken.formattedId} assigned to Counter ${cId}.`, 'success');
-        playAudioCall(res.calledToken.formattedId, res.calledToken.serviceName, `Counter ${cId}`);
-        fetchSystemStatus();
+      if (isConnectedToCpp) {
+        const res = await apiRequest('/api/counter/override', 'POST', { counterId: cId, tokenId: tId });
+        if (res && res.success) {
+          showAlert(`Manual Override Successful! Token ${res.calledToken.formattedId} assigned to Counter ${cId}.`, 'success');
+          playAudioCall(res.calledToken.formattedId, res.calledToken.serviceName, `Counter ${cId}`);
+          fetchSystemStatus();
+        } else {
+          showAlert('Override failed. Counter may be busy or token ID not found in queue.', 'danger');
+        }
       } else {
-        showAlert('Override failed. Counter may be busy or token ID not found in queue.', 'danger');
+        const c = systemState.counters.find(x => x.id === cId);
+        let foundToken = null;
+        let sKeyFound = null;
+
+        Object.keys(systemState.queues).forEach(sKey => {
+          const list = systemState.queues[sKey];
+          const idx = list.findIndex(t => t.id === tId || t.formattedId.includes(String(tId)));
+          if (idx !== -1) {
+            foundToken = list.splice(idx, 1)[0];
+            sKeyFound = sKey;
+          }
+        });
+
+        if (foundToken && c) {
+          c.hasActiveToken = true;
+          c.status = 'SERVING';
+          c.currentToken = {
+            id: foundToken.id,
+            formattedId: foundToken.formattedId,
+            studentName: foundToken.studentName,
+            studentId: foundToken.studentId,
+            serviceName: foundToken.serviceName || sKeyFound
+          };
+          recalculateStandaloneStats();
+          showAlert(`Manual Override: Token ${foundToken.formattedId} assigned to ${c.name}!`, 'success');
+          playAudioCall(foundToken.formattedId, foundToken.serviceName || sKeyFound, c.name);
+        } else {
+          showAlert(`Token ID ${tId} was not found in waiting queues.`, 'warning');
+        }
       }
     }
 
     async function loadCollegeDemo() {
-      const res = await apiRequest('/api/demo/load', 'POST');
-      if (res && res.success) {
-        showAlert('College demo sample data loaded into C++ engine!', 'success');
+      if (isConnectedToCpp) {
+        const res = await apiRequest('/api/demo/load', 'POST');
+        if (res && res.success) {
+          showAlert('College demo sample data loaded into C++ engine!', 'success');
+          fetchSystemStatus();
+        }
+      } else {
+        systemState = null;
         fetchSystemStatus();
+        showAlert('College demo sample data loaded!', 'success');
       }
     }
 
     async function resetAllQueues() {
       if (!confirm('Are you sure you want to reset all service queues?')) return;
-      const res = await apiRequest('/api/demo/reset', 'POST');
-      if (res && res.success) {
-        showAlert('Queues reset to initial state.', 'info');
-        fetchSystemStatus();
+      if (isConnectedToCpp) {
+        const res = await apiRequest('/api/demo/reset', 'POST');
+        if (res && res.success) {
+          showAlert('Queues reset to initial state.', 'info');
+          fetchSystemStatus();
+        }
+      } else {
+        Object.keys(systemState.queues).forEach(k => {
+          systemState.queues[k] = [];
+        });
+        systemState.counters.forEach(c => {
+          c.status = 'AVAILABLE';
+          c.hasActiveToken = false;
+          c.currentToken = null;
+        });
+        recalculateStandaloneStats();
+        showAlert('All queues have been reset to zero.', 'info');
       }
     }
 
@@ -1556,14 +1860,20 @@
       const grace = parseInt(document.getElementById('settingGracePeriod').value);
       const qrUrl = document.getElementById('settingQrUrl').value.trim();
 
-      const res = await apiRequest('/api/settings', 'POST', {
-        gracePeriodMinutes: grace,
-        qrCodeTargetUrl: qrUrl
-      });
-      if (res && res.success) {
-        showAlert('Settings saved and QR code updated in C++ engine!', 'success');
-        fetchQrCode();
-        fetchSystemStatus();
+      if (isConnectedToCpp) {
+        const res = await apiRequest('/api/settings', 'POST', {
+          gracePeriodMinutes: grace,
+          qrCodeTargetUrl: qrUrl
+        });
+        if (res && res.success) {
+          showAlert('Settings saved and QR code updated in C++ engine!', 'success');
+          fetchQrCode();
+          fetchSystemStatus();
+        }
+      } else {
+        systemState.gracePeriodMinutes = grace;
+        systemState.qrCodeTargetUrl = qrUrl;
+        showAlert('Settings updated in standalone preview!', 'success');
       }
     }
 
