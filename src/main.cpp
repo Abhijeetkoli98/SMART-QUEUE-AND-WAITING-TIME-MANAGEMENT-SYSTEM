@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
         }
 
         std::cout << "\n  MAIN MENU:\n";
-        std::cout << "  [1] Generate New Student Token (Select Service: ADM, FEE, EXM, CRT)\n";
+        std::cout << "  [1] Generate New Student Token (ADM, FEE, EXM, CRT, GEN)\n";
         std::cout << "  [2] View All Service Queues (FIFO Order per Service)\n";
         std::cout << "  [3] Call Next Student at Counter (Intelligent Workload Balancing)\n";
         std::cout << "  [4] Mark Current Service Completed at Counter\n";
@@ -131,10 +131,11 @@ int main(int argc, char* argv[]) {
         std::cout << "  [9] Settings & Grace Period Configuration\n";
         std::cout << "  [10] Load College Demo Sample Data\n";
         std::cout << "  [11] Open Web Dashboard in Browser\n";
+        std::cout << "  [12] View Mobile Kiosk QR Code URL & Target\n";
         std::cout << "  [0] Exit Application\n";
         std::cout << "  -----------------------------------------------------------------------------\n";
 
-        choice = getIntInput("  Enter your choice [0-11]: ");
+        choice = getIntInput("  Enter your choice [0-12]: ");
 
         switch (choice) {
             case 1: { // Generate Token
@@ -144,12 +145,14 @@ int main(int argc, char* argv[]) {
                 std::cout << "    [2] FEE - Fees & Financial Accounts (Avg ~4m)\n";
                 std::cout << "    [3] EXM - Examination & Results (Avg ~6m)\n";
                 std::cout << "    [4] CRT - Transcripts & Certificates (Avg ~5m)\n";
-                int svcChoice = getIntInput("  Select service [1-4]: ");
+                std::cout << "    [5] GEN - General Enquiry & Reception (Avg ~3m)\n";
+                int svcChoice = getIntInput("  Select service [1-5]: ");
 
                 std::string sId = "ADM";
                 if (svcChoice == 2) sId = "FEE";
                 else if (svcChoice == 3) sId = "EXM";
                 else if (svcChoice == 4) sId = "CRT";
+                else if (svcChoice == 5) sId = "GEN";
 
                 std::string name = getStringInput("  Enter Student Name: ");
                 std::string stId = getStringInput("  Enter Student Roll/ID (e.g. SE-2026-042): ");
@@ -170,8 +173,8 @@ int main(int argc, char* argv[]) {
 
             case 2: { // View All Queues
                 std::cout << "\n  --- ALL LIVE SERVICE QUEUES (STRICT FIFO ORDER) ---\n";
-                const char* svcCodes[] = { "ADM", "FEE", "EXM", "CRT" };
-                for (int s = 0; s < 4; ++s) {
+                const char* svcCodes[] = { "ADM", "FEE", "EXM", "CRT", "GEN" };
+                for (int s = 0; s < 5; ++s) {
                     std::cout << "\n  === Service: " << svcCodes[s] << " (Total Waiting: "
                               << engine.getWaitingCountForService(svcCodes[s]) << ") ===\n";
                     // Search in engine
@@ -358,6 +361,15 @@ int main(int argc, char* argv[]) {
                 std::string cmd = "start " + url;
                 std::system(cmd.c_str());
 #endif
+                pauseConsole();
+                break;
+            }
+
+            case 12: { // View Mobile Kiosk QR Code URL
+                std::cout << "\n  --- MOBILE STUDENT KIOSK QR CODE INFO ---\n";
+                std::cout << "  Campus Target URL : " << engine.getQrCodeTargetUrl() << "\n";
+                std::cout << "  QR SVG Endpoint   : http://localhost:" << server.getPort() << "/api/qrcode.svg\n";
+                std::cout << "  (Students can scan this from any phone on campus Wi-Fi to join queue)\n";
                 pauseConsole();
                 break;
             }
